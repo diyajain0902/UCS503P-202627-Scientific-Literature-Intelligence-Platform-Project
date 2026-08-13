@@ -1,0 +1,245 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% -----------------------------------------------------
+% bvraghav-tiet-ucs503p-article.sty
+% -----------------------------------------------------
+
+% Variable: Lab Instructor
+\makeatletter \newcommand{\BvrSetLabInstructor}[1]{%
+  \gdef\Bvr@LabInstructor{#1}}
+% default
+\newcommand{\Bvr@LabInstructor}{Ms. Paramveer %
+  Kaur}
+% public accessor
+\newcommand{\BvrLabInstructorValue}{\Bvr@LabInstructor}
+\makeatother
+
+% Add subtitle
+\usepackage{titling}
+% -- Set title bold
+\pretitle{\begin{center}\bfseries\fontsize{18bp}{18bp}\selectfont}
+\makeatletter
+\newcommand{\BvrSubtitle}[1]{%
+  \posttitle{%
+    \par\end{center}
+    \begin{center}\large#1\end{center}
+    \vskip 0.5em}%
+}
+\makeatother
+
+% -----------------------------------------------------
+
+\title{Scientific Literature Intelligence Platform}
+
+\BvrSetLabInstructor{Ms. Paramveer Kaur}
+
+\BvrSubtitle{%
+  Project Proposal for UCS503P  \\
+  Submitted to: \BvrLabInstructorValue \\ \bfseries
+  Thapar Institute of Engineering and Technology%
+}
+
+\author{
+  Paarth Ganesh, CSED%
+  \thanks{Roll No: \texttt{1024030171}, %
+    Email: \texttt{pganesh\_be24@thapar.edu}}
+  \and
+  Diya Jain, CSED%
+  \thanks{Roll No: \texttt{1024031154}, %
+    Email: \texttt{djain2\_be24@thapar.edu}}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Higher-order goal}
+This project builds a retrieval-augmented research assistant
+that lets a user ask natural-language questions over a corpus
+of scientific papers and receive answers that are grounded in,
+and cited back to, specific source passages. The corpus is
+populated both automatically---by fetching papers from the
+arXiv API---and manually, by letting users upload their own
+PDFs. The engineering objective is a deployed web service that,
+given a question, returns an answer where every factual claim
+is traceable to a retrieved chunk, plus per-paper and
+cross-paper summaries. We treat retrieval quality and answer
+faithfulness as first-class, measurable properties rather than
+afterthoughts.
+
+\section{Time-to-value}
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Iteration 1 (end of week 2):} a working vertical slice---ingest a fixed set of arXiv PDFs, embed them, and serve semantic search over a REST endpoint. This alone is demonstrable and measurable.
+    \item \textbf{Iteration 2 (week 4):} grounded question answering with inline citations, backed by a labeled evaluation set so every later change is scored, not guessed.
+    \item \textbf{Iteration 3+ (week 5 onward):} summarization, structured knowledge extraction, hybrid retrieval, and reranking---each added only after it beats the previous version on the eval harness.
+    \item CI runs the test suite and a retrieval-quality check on every commit, so regressions surface immediately rather than at demo time.
+\end{itemize}
+
+\section{Problem Statement}
+Researchers, students, and analysts lose significant time reviewing literature across thousands of papers. The concrete failures we target are:
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Information overload:} the volume of publications makes exhaustive manual review infeasible, so relevant prior work is missed.
+    \item \textbf{Keyword-search limitations:} lexical search fails when authors describe the same concept with different terminology, hiding semantically related work.
+    \item \textbf{Ungrounded answers:} general-purpose chatbots fabricate citations and DOIs, so their output cannot be trusted for factual, source-backed claims.
+    \item \textbf{Slow synthesis:} manually extracting and comparing methods, datasets, and reported metrics across many papers is repetitive and error-prone.
+\end{itemize}
+
+\textbf{Why this matters now:} scientific output is growing faster than any individual can absorb, while retrieval-augmented generation has made grounded, citation-backed answering practical on commodity hardware. The platform converts that capability into saved review time and verifiable answers.
+
+\section{Proposed Solution}
+\subsection{Overview}
+A \textbf{web-based} platform composed of five subsystems:
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Ingestion:} fetch papers from the arXiv API (or accept uploaded PDFs), extract text and metadata, chunk, embed, and store.
+    \item \textbf{Semantic search:} embedding-based retrieval that surfaces conceptually relevant passages rather than exact keyword matches.
+    \item \textbf{Grounded question answering:} answers generated strictly from retrieved passages, each claim carrying an inline citation to its source paper and page.
+    \item \textbf{Summarization:} concise summaries of a single paper or across a set of retrieved results.
+    \item \textbf{Knowledge extraction:} structured pull of task, method, dataset, and headline metric, enabling side-by-side comparison across papers.
+\end{itemize}
+
+\subsection{Concrete technology stack}
+Chosen for a cost-aware, industry-realistic build---local models on the high-volume retrieval path, a hosted LLM only for final generation.
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Backend:} Python + FastAPI (async, typed, auto-generated OpenAPI docs).
+    \item \textbf{Frontend:} React with a lightweight component library; chat-style Q\&A, search, and corpus views.
+    \item \textbf{Embeddings (local):} \texttt{sentence-transformers} \texttt{all-MiniLM-L6-v2} (384-dim), run locally so retrieval has zero per-query API cost.
+    \item \textbf{Vector store + database:} PostgreSQL with the \texttt{pgvector} extension---one system for both relational metadata and vector search, avoiding a second datastore.
+    \item \textbf{Generation LLM (hosted):} Gemini 2.5 Flash, called only to compose the final grounded answer and summaries from retrieved context.
+    \item \textbf{PDF parsing:} PyMuPDF for text and page-level positions (needed for page-accurate citations).
+    \item \textbf{Ingestion source:} the official arXiv API for metadata and PDF links.
+    \item \textbf{Deployment:} Docker Compose; app on Render/Railway, managed Postgres alongside.
+    \item \textbf{CI/CD:} GitHub Actions---lint, tests, and a retrieval-quality gate on every push.
+\end{itemize}
+
+\subsection{Core workflow}
+\begin{enumerate}[leftmargin=0.7cm]
+    \item User fetches papers by arXiv query or uploads PDFs; the ingestion pipeline parses, chunks, embeds, and stores them.
+    \item User poses a natural-language question.
+    \item The retriever embeds the query and pulls the top-$k$ chunks by vector similarity, optionally reranked.
+    \item The generator composes an answer strictly from those chunks, attaching a citation (paper + page) to each claim, and returns it with summaries and extracted fields.
+\end{enumerate}
+
+\section{Solution Approach}
+This is an engineering project: the novelty is in system design, retrieval quality, and grounding discipline, not in inventing models.
+
+\subsection{Ingestion and chunking}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Parse PDFs with PyMuPDF, retaining page numbers so every chunk knows its origin.
+    \item Chunk by a fixed token window ($\approx$500 tokens) with $\approx$15\% overlap, so context is not severed mid-idea.
+    \item Store each chunk with its paper id, page, character span, and 384-dimensional embedding.
+    \item Ingestion is idempotent: re-fetching a known arXiv id updates rather than duplicates it.
+\end{itemize}
+
+\subsection{Retrieval and grounding}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Baseline: dense retrieval via cosine similarity on \texttt{pgvector} using an HNSW index for sub-linear search.
+    \item Upgrade: hybrid retrieval---combine dense scores with lexical BM25, then rerank the merged top results with a cross-encoder for precision.
+    \item Grounding contract: the generator receives only retrieved chunks and is instructed to answer solely from them; if the context does not support an answer, it says so rather than inventing one.
+    \item Every claim in the output is tied to a chunk id, which resolves to a paper-and-page citation shown to the user.
+\end{itemize}
+
+\subsection{Data model}
+Four core tables:
+\begin{itemize}[leftmargin=0.7cm]
+    \item \texttt{papers}(id, arxiv\_id, title, authors, year, source, created\_at)
+    \item \texttt{chunks}(id, paper\_id, page, char\_start, char\_end, text, embedding \texttt{vector(384)})
+    \item \texttt{queries}(id, user\_question, created\_at, latency\_ms)
+    \item \texttt{answers}(id, query\_id, answer\_text, cited\_chunk\_ids, groundedness\_flag)
+\end{itemize}
+
+\subsection{CI/CD}
+GitHub Actions on every push:
+\begin{itemize}[leftmargin=0.7cm]
+    \item Lint (ruff) and format check, then unit + integration tests (pytest).
+    \item A retrieval-quality gate: run the labeled eval set and fail the build if Recall@5 drops below the current threshold.
+    \item Build the Docker image and deploy to staging on a green main branch.
+\end{itemize}
+
+\section{Evaluation Criterion}
+Every metric is computed automatically against a hand-labeled evaluation set of question--passage pairs, so scores are reproducible and comparable across iterations.
+
+\subsection{Primary evaluation metric}
+\textbf{Retrieval relevance --- Recall@k:} the fraction of evaluation queries for which at least one truly relevant passage appears in the top-$k$ retrieved chunks.
+\begin{itemize}[leftmargin=0.7cm]
+    \item Target: Recall@5 $\ge$ 0.80 on the labeled set during the pilot.
+    \item Attribution: measured directly against the ground-truth labels; the same harness runs in CI, so any regression is caught on commit.
+\end{itemize}
+
+\subsection{Secondary evaluation metrics}
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Answer groundedness / faithfulness:} percentage of answer claims that are supported by a cited chunk, checked by an LLM-as-judge pass plus a spot-checked human sample.
+    \item \textbf{Mean Reciprocal Rank (MRR):} rewards ranking the correct passage higher, not just including it.
+    \item \textbf{Time-to-insight reduction:} time to locate a relevant paper on the platform versus a manual keyword-search baseline.
+    \item \textbf{End-to-end latency:} p95 query latency $\le$ 3 seconds, logged per query.
+    \item \textbf{Reliability:} $\ge$ 99\% uptime for search and Q\&A during the pilot window.
+\end{itemize}
+
+\subsection{Pilot validation plan}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Assemble a fixed corpus of a few hundred arXiv papers in one domain (e.g., NLP) and hand-label $\sim$50 questions with their supporting passages.
+    \item Recruit 10--20 pilot users; compare time-to-insight and answer quality against the manual baseline using the labeled set and short interviews.
+\end{itemize}
+
+\section{Scalability}
+\begin{enumerate}[leftmargin=0.7cm]
+    \item \textbf{Scalable (theoretically):} the system absorbs growth in corpus size and concurrent queries by
+    \begin{itemize}[leftmargin=0.7cm]
+        \item using an HNSW index in \texttt{pgvector} for sub-linear nearest-neighbor search,
+        \item decoupling ingestion (batch) from serving (online) so heavy embedding jobs never block queries,
+        \item keeping the API stateless behind a load balancer.
+    \end{itemize}
+    \item \textbf{Operationally deployable (practically):} the system runs on common hosting via
+    \begin{itemize}[leftmargin=0.7cm]
+        \item a single managed Postgres instance for both metadata and vectors,
+        \item a containerized app deployable to Render/Railway,
+        \item a GitHub Actions pipeline for staging and production.
+    \end{itemize}
+\end{enumerate}
+
+\section{Engine availability heuristic}
+Every component maps to a mature, available tool, so effort goes into system design and retrieval quality rather than infrastructure:
+\begin{itemize}[leftmargin=0.7cm]
+    \item FastAPI for the API layer; React for the UI.
+    \item \texttt{sentence-transformers} for local embeddings; Gemini 2.5 Flash for generation.
+    \item PostgreSQL + \texttt{pgvector} for combined relational and vector storage.
+    \item PyMuPDF for parsing; the arXiv API for ingestion.
+    \item pytest for testing; GitHub Actions for CI/CD; Docker for packaging.
+\end{itemize}
+
+\section{Project scope and deliverables}
+\subsection{Initial deliverable}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Ingestion pipeline: arXiv fetch + PDF upload, parse, chunk, embed, store
+    \item Semantic search endpoint returning ranked chunks with paper/page metadata
+    \item Grounded Q\&A returning answers with inline source citations
+    \item Labeled evaluation set and an automated harness computing Recall@k and MRR
+    \item CI: lint + tests + retrieval-quality gate; CD to staging
+\end{itemize}
+
+\subsection{Subsequent deliverables}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Per-paper and cross-paper summarization
+    \item Structured knowledge extraction (task, method, dataset, metric)
+    \item Hybrid retrieval (dense + BM25) with cross-encoder reranking
+    \item Corpus management, filtering, and query-history views
+\end{itemize}
+
+\section{Risks and mitigations}
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Hallucination / ungrounded answers:} strict retrieval-only prompting, mandatory citations, and an automated faithfulness check on every response.
+    \item \textbf{Poor retrieval quality:} guard with the eval harness; escalate from dense to hybrid + reranking only when the data shows a gain.
+    \item \textbf{PDF parsing failures:} PyMuPDF with a fallback path and per-document logging so bad files are isolated, not fatal.
+    \item \textbf{Copyright / licensing:} restrict fetching to arXiv (open access) plus user-uploaded content.
+    \item \textbf{Cost overrun:} embeddings run locally; the hosted LLM is called only at generation time, on a small budget.
+\end{itemize}
+
+\section{Summary}
+This project delivers a deployable retrieval-augmented platform for scientific literature: arXiv and user-PDF ingestion, local embeddings with \texttt{pgvector} search, and Gemini-generated answers that cite their sources. It meets the course criteria through early time-to-value via a working vertical slice, CI/CD with an automated retrieval-quality gate for safe frequent releases, and rigorous measurable evaluation---chiefly Recall@k and answer groundedness. The engineering focus is a well-designed, cost-aware, scalable system rather than research novelty.
+
+\end{document}
