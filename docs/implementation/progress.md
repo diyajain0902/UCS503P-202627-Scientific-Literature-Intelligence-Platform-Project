@@ -2,6 +2,32 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 1 addendum: local database verification and pgvector defect
+
+**Docker:** not installed. Installing Docker Desktop requires enabling WSL2/Hyper-V (Windows system features,
+administrator rights, reboot) and accepting Docker's licence; left to the team.
+
+**Workaround used (no system changes):** `pgserver` (PyPI) in a throwaway venv under `%TEMP%\slippg`, providing
+PostgreSQL 16.2 with **pgvector 0.6.2** on `localhost:5433` (trust auth, localhost only). Stopped afterwards.
+
+**Defect found and fixed:** pgvector < 0.8.0 rejects `hnsw.iterative_scan` ("reserved prefix"), so every search
+returned an unexplained HTTP 500. Fix: `app/retrieval/search.py` checks the installed pgvector version; search returns
+HTTP 503 `dependency_unavailable` ("pgvector 0.6.2 is installed; 0.8.0 or newer is required") and `/ready` reports
+the same. Regression tests: `tests/test_pgvector_version.py` (10 tests). Docker Compose and CI pin 0.8.0.
+
+**Local results against PostgreSQL 16.2 + pgvector 0.6.2:**
+- `pytest -m integration` → **24 passed, 4 failed**. The 4 failures are the search/readiness tests, failing with
+  the new explicit 503 because 0.6.2 is below the minimum — expected; they pass on 0.8.0 in CI.
+- Unit suite → **85 passed**. Ruff, mypy strict → pass.
+
+**Real end-to-end ingestion (first time with every real component):** backend via `uvicorn`, `POST /papers/arxiv`
+`1706.03762v7` → job `ready` after 75 s (includes rate-limit wait and MiniLM load). Stored: title "Attention Is All
+You Need", 15 pages, 45 chunks, token counts 244–254, all vectors 384-dim, 15 chunks spanning two pages,
+chunker `tokwin-v1|sentence-transformers/all-MiniLM-L6-v2|w256|o38`, extractor `pymupdf-1.28.2/v1`.
+Logs contained event names, IDs, and sizes only. Search on this database correctly returned the 503 above.
+
+**Still not verified locally:** search on pgvector ≥ 0.8.0 (verified in CI only); `docker compose up`.
+
 ## 2026-10-08 — Milestone 1: Runnable vertical slice (branch `feature/m1-vertical-slice`)
 
 **Approvals received:** M1 scope; ADR-0003 (256-token window, 38 overlap); team to install Docker.

@@ -89,4 +89,6 @@ cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 
 - `uv` errors about hardlinks inside OneDrive: the project sets `link-mode = "copy"` in `backend/pyproject.toml`.
 - `/api/v1/ready` returns 503 with `database: unreachable or not migrated`: start `db` and run `alembic upgrade head`.
+- Search returns 503 "pgvector X is installed; 0.8.0 or newer is required": use the compose `db` service
+  (pgvector 0.8.0) or upgrade the extension.
 - An import fails with "Interrupted by a server restart": the backend restarted mid-job; import the paper again.

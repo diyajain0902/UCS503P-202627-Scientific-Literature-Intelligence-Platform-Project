@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.retrieval.embedding import ManagedEmbedder
+from app.retrieval.search import installed_pgvector_version, pgvector_version_problem
 
 
 @dataclass(frozen=True)
@@ -18,16 +19,15 @@ class CheckResult:
 def check_database(session_factory: sessionmaker[Session]) -> CheckResult:
     try:
         with session_factory() as session:
-            version = session.execute(
-                text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
-            ).scalar_one_or_none()
+            version = installed_pgvector_version(session)
             revision = session.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar_one_or_none()
     except Exception as exc:
         return CheckResult(False, f"unreachable or not migrated ({type(exc).__name__})")
-    if version is None:
-        return CheckResult(False, "pgvector extension not installed")
+    problem = pgvector_version_problem(version)
+    if problem is not None:
+        return CheckResult(False, problem)
     return CheckResult(True, f"pgvector {version}, schema revision {revision}")
 
 

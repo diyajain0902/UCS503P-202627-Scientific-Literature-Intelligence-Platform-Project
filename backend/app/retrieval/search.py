@@ -8,6 +8,37 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Chunk, Document, Paper
 
+# hnsw.iterative_scan (used below) was added in pgvector 0.8.0; older versions reject the setting.
+MIN_PGVECTOR_VERSION = (0, 8, 0)
+
+
+def parse_version(raw: str) -> tuple[int, ...]:
+    """Parse a version like ``0.8.0`` into a comparable tuple; non-numeric parts end the parse."""
+    parts: list[int] = []
+    for piece in raw.split("."):
+        digits = "".join(ch for ch in piece if ch.isdigit())
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts)
+
+
+def installed_pgvector_version(session: Session) -> str | None:
+    version: str | None = session.execute(
+        text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+    ).scalar_one_or_none()
+    return version
+
+
+def pgvector_version_problem(version: str | None) -> str | None:
+    """Return a user-readable problem if the installed pgvector cannot serve searches."""
+    if version is None:
+        return "pgvector extension not installed"
+    if parse_version(version) < MIN_PGVECTOR_VERSION:
+        required = ".".join(map(str, MIN_PGVECTOR_VERSION))
+        return f"pgvector {version} is installed; {required} or newer is required"
+    return None
+
 
 @dataclass(frozen=True)
 class ChunkHit:

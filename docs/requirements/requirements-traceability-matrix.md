@@ -8,13 +8,13 @@ Last updated: 2026-10-08 (Milestone 1).
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|
 | FR-01 | M1, M4 | `backend/app/ingestion/arxiv.py` | `test_arxiv.py` (ID parsing, Atom parsing, SSRF allow-list, redirects, size cap, rate limit, error mapping); `test_arxiv_live.py` (live, manual) | — | Partial — import by ID verified (incl. live arXiv 2026-10-08); query search UI is M4 |
-| FR-02 | M1 | `backend/app/services/ingestion.py`, `backend/app/db/` | `test_ingestion_pipeline.py` (ready path, idempotent re-import, new version replaces, retry) — CI integration job | — | Verified (CI, real PostgreSQL) |
+| FR-02 | M1 | `backend/app/services/ingestion.py`, `backend/app/db/` | `test_ingestion_pipeline.py` (ready path, idempotent re-import, new version replaces, retry) — CI integration job; real end-to-end import of 1706.03762v7 on local PostgreSQL (progress log) | — | Verified (CI + local real-component run) |
 | FR-03 | M4 | `backend/app/ingestion/upload.py` | — | — | Planned |
 | FR-04 | M1 | `backend/app/ingestion/pdf.py` | `test_pdf.py` (offsets, page mapping, determinism, non-PDF/corrupt/encrypted/too-many-pages/no-text rejection) | — | Verified |
 | FR-05 | M1 | `backend/app/ingestion/chunking.py` | `test_chunking.py`; `test_real_model.py::test_real_tokenizer_chunks_fit_model_input` | NFR-08 | Verified (ADR-0003: 256/38) |
 | FR-06 | M1 | `backend/app/retrieval/embedding.py` | `test_embedding.py`; `test_real_model.py` (384-dim, normalized, max_seq_length 256); DB rejects ≠384 dims | — | Verified |
 | FR-07 | M1 | `backend/app/db/models.py`, `backend/alembic/versions/20261008_0001_initial_schema.py` | `test_db_schema.py` (upgrade, downgrade/upgrade, `alembic check` drift, constraints, cascade) — CI integration job | — | Verified (CI, real PostgreSQL + pgvector 0.8.0) |
-| FR-08 | M1 | `backend/app/retrieval/search.py`, `backend/app/services/search.py`, `backend/app/api/v1/routes.py`, `frontend/src/features/search/` | `test_search_integration.py` (ranking, filter, determinism, empty corpus); `test_api_validation.py` (bounds); `SearchPanel.test.tsx` | NFR-01, NFR-04 | Verified with controlled embedder; retrieval quality unmeasured until M3 |
+| FR-08 | M1 | `backend/app/retrieval/search.py`, `backend/app/services/search.py`, `backend/app/api/v1/routes.py`, `frontend/src/features/search/` | `test_search_integration.py` (ranking, filter, determinism, empty corpus); `test_api_validation.py` (bounds); `test_pgvector_version.py`; `SearchPanel.test.tsx` | NFR-01, NFR-04 | Verified with controlled embedder on pgvector 0.8.0 (CI); requires pgvector ≥ 0.8.0 (guarded); retrieval quality unmeasured until M3 |
 | FR-09 | M2 | `backend/app/generation/`, `backend/app/services/qa.py` | — | NFR-03 | Planned |
 | FR-10 | M2 | `backend/app/generation/citations.py` | — | NFR-06 | Planned |
 | FR-11 | M2 | `backend/app/services/qa.py` | — | NFR-07 | Planned |
