@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Runtime data — never commit uploads, PDFs fetched at runtime, DB dumps, or model artifacts
+/data/
+/storage/
+*.dump
+*.sql.gz
+models/
+.cache/
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
