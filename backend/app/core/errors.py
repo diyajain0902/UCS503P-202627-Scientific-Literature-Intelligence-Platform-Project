@@ -1,0 +1,69 @@
+"""Domain errors and their HTTP mapping.
+
+Every error response uses the envelope ``{"error": {"code": str, "message": str}}``.
+"""
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+
+class AppError(Exception):
+    """Base class for expected, user-reportable errors."""
+
+    status_code = 500
+    code = "internal_error"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+
+class NotFoundError(AppError):
+    status_code = 404
+    code = "not_found"
+
+
+class InvalidInputError(AppError):
+    status_code = 422
+    code = "invalid_input"
+
+
+class UpstreamError(AppError):
+    """An external dependency (arXiv, Ollama) failed or returned unusable data."""
+
+    status_code = 502
+    code = "upstream_error"
+
+
+class DocumentRejectedError(AppError):
+    """A PDF cannot be processed (too large, encrypted, scanned, corrupt)."""
+
+    status_code = 422
+    code = "document_rejected"
+
+
+class DependencyUnavailableError(AppError):
+    status_code = 503
+    code = "dependency_unavailable"
+
+
+def _envelope(code: str, message: str, status_code: int) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code, content={"error": {"code": code, "message": message}}
+    )
+
+
+def register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(AppError)
+    async def _app_error(_: Request, exc: AppError) -> JSONResponse:
+        return _envelope(exc.code, exc.message, exc.status_code)
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+        first = exc.errors()[0] if exc.errors() else {}
+        location = ".".join(str(part) for part in first.get("loc", ()) if part != "body")
+        message = (
+            f"{location}: {first.get('msg', 'invalid request')}" if location else "invalid request"
+        )
+        return _envelope("invalid_input", message, 422)

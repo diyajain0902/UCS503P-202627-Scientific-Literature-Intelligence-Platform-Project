@@ -1,39 +1,29 @@
-import { useEffect, useState } from 'react'
-import { fetchHealth, type HealthResponse } from './api/client'
-
-type ApiState =
-  | { kind: 'loading' }
-  | { kind: 'ok'; health: HealthResponse }
-  | { kind: 'error'; message: string }
+import { useCallback, useState } from 'react'
+import { PaperList } from './features/corpus/PaperList'
+import { ImportForm } from './features/ingest/ImportForm'
+import { SearchPanel } from './features/search/SearchPanel'
+import { BackendStatus } from './features/status/BackendStatus'
 
 function App() {
-  const [api, setApi] = useState<ApiState>({ kind: 'loading' })
-
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchHealth(controller.signal)
-      .then((health) => setApi({ kind: 'ok', health }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setApi({ kind: 'error', message: error instanceof Error ? error.message : String(error) })
-      })
-    return () => controller.abort()
-  }, [])
+  const [corpusVersion, setCorpusVersion] = useState(0)
+  const refreshCorpus = useCallback(() => setCorpusVersion((v) => v + 1), [])
 
   return (
-    <main>
-      <h1>Scientific Literature Intelligence Platform</h1>
-      <p className="muted">Grounded search and question answering over scientific papers.</p>
-      <p role="status">
-        {api.kind === 'loading' && 'Checking backend…'}
-        {api.kind === 'ok' && (
-          <span className="status-ok">Backend online (v{api.health.version})</span>
-        )}
-        {api.kind === 'error' && (
-          <span className="status-error">Backend unreachable: {api.message}</span>
-        )}
-      </p>
-    </main>
+    <>
+      <header className="app-header">
+        <div className="container">
+          <h1>Scientific Literature Intelligence Platform</h1>
+          <BackendStatus />
+        </div>
+      </header>
+      <main className="container">
+        <SearchPanel />
+        <div className="grid">
+          <ImportForm onImported={refreshCorpus} />
+          <PaperList refreshKey={corpusVersion} />
+        </div>
+      </main>
+    </>
   )
 }
 

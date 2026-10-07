@@ -1,0 +1,60 @@
+# Local stack: PostgreSQL + pgvector, backend API, and the built frontend.
+# All ports bind to 127.0.0.1 only; nothing is exposed beyond this machine.
+# Ollama runs on the host (GPU access) and is reached via host.docker.internal.
+name: slip
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.0-pg17
+    environment:
+      POSTGRES_USER: slip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+      POSTGRES_DB: slip
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slip -d slip"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      SLIP_DATABASE_URL: postgresql+psycopg://slip:${POSTGRES_PASSWORD}@db:5432/slip
+      SLIP_STORAGE_DIR: /data/storage
+      SLIP_OLLAMA_BASE_URL: http://host.docker.internal:11434
+      SLIP_OLLAMA_MODEL: ${SLIP_OLLAMA_MODEL:-qwen2.5:3b}
+      SLIP_CORS_ORIGINS: '["http://localhost:8080"]'
+      HF_HOME: /models
+    volumes:
+      - storage:/data
+      - hf-cache:/models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  pgdata:
+  storage:
+  hf-cache:
