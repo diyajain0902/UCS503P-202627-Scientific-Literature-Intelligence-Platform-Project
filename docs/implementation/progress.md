@@ -2,6 +2,41 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 1: Runnable vertical slice (branch `feature/m1-vertical-slice`)
+
+**Approvals received:** M1 scope; ADR-0003 (256-token window, 38 overlap); team to install Docker.
+
+**M0 re-validation:** PR #2 merged; CI green on the PR and on `main` → IR-04 verified.
+
+**Delivered:** arXiv import by ID (allow-listed HTTPS hosts, rate-limited, size-capped, defusedxml);
+PyMuPDF page-aware extraction with rejection of non-PDF/corrupt/encrypted/oversized/text-less PDFs;
+deterministic token-window chunking on the MiniLM tokenizer; MiniLM embeddings with dimension and
+input-length validation; PostgreSQL + pgvector schema (migration `0001`, HNSW cosine index, constraints);
+in-process job runner (ADR-0005); `/papers/arxiv`, `/jobs/{id}`, `/papers`, `/papers/{id}`, `/search`, `/ready`;
+error envelope; JSON logs with request IDs; React UI (status bar, import with live job state, corpus list,
+search results with pages, scores, arXiv links); Docker Compose (localhost-only ports) and Dockerfiles;
+CI jobs for integration tests (pgvector service + real model) and image builds.
+
+**Environment facts found:** uv must use `link-mode = "copy"` inside OneDrive (hardlinks rejected, os error 396).
+First MiniLM download + load took 272.8 s on this network; encode of 64 short sentences on CPU: 0.16 s.
+Verified `max_seq_length = 256`, dimension 384, vectors L2-normalized.
+
+**Commands and results (local, Windows, Python 3.12.13):**
+- `uv run ruff check .` / `ruff format --check .` → pass. `uv run mypy` (strict) → no issues in 45 files.
+- `uv run pytest -m "not integration and not model and not network"` → **75 passed**.
+  First run had 2 failures caused by a wrong test case (`1706.0376` is a valid pre-2015 ID format); test fixed.
+- `uv run pytest -m "model or network"` → **5 passed** (real MiniLM; live arXiv fetch of 1706.03762v1 + extraction).
+- `uv run pytest` without `SLIP_TEST_DATABASE_URL` → 28 integration tests **skipped** locally (no Docker).
+- Frontend: `lint`, `typecheck`, `build` pass; `npm test` → **10 passed** (4 files).
+
+**CI (GitHub Actions run 37683723123, commit 903339d):** `frontend`, `backend`, `backend-integration`
+(28 integration + 4 model tests against `pgvector/pgvector:0.8.0-pg17`), `docker-images` (compose config +
+build) → all **success**. Per-test counts in CI logs were not retrieved (log download requires authentication);
+job success means pytest exited 0 and the DB URL was set, so no integration test could skip.
+
+**Not verified:** `docker compose up` end-to-end on the reference machine; real-model ingestion of a real arXiv
+PDF through the full pipeline into PostgreSQL (each half verified separately); search latency; retrieval quality.
+
 ## 2026-10-08 — Milestone 0: Assessment and foundation
 
 **Baseline (before changes):** repository contained only `README.md` (title line), `CLAUDE.md`, and
