@@ -1,0 +1,37 @@
+# Progress Log
+
+Newest first. Record facts only: what changed, commands run, actual results.
+
+## 2026-10-08 — Milestone 0: Assessment and foundation
+
+**Baseline (before changes):** repository contained only `README.md` (title line), `CLAUDE.md`, and
+`Project Proposal/` (`main.tex`, `main.pdf`). No code, manifests, tests, CI, or schema. Nothing to build or test.
+
+**Environment discovered:**
+- Windows 11 Home 10.0.26200; Ryzen 7 7435HS (16 threads); 15.8 GB RAM; NVIDIA RTX 3050 Laptop 4 GB; ~119 GB free on C:.
+- Python 3.14.5 (system), uv 0.11.7, Node 24.16.0, npm 11.13.0, Ollama 0.34.4 (server running on `localhost:11434`).
+- Ollama models installed: `qwen2.5:3b` (Q4_K_M), `nomic-embed-text` (not used — contract mandates MiniLM).
+- Missing: Docker, `psql`, GitHub CLI, WSL.
+
+**Ollama probe (manual, not an automated test):** two `/api/generate` calls to `qwen2.5:3b` with `format: json`,
+`temperature: 0`, `num_predict: 64`. Both returned valid JSON with correct answers. Cold: total 10.04 s
+(load 9.69 s). Warm: total 0.24 s, 10 tokens in 0.14 s. Loaded size 2.16 GB, fully in VRAM; default context 4096.
+
+**Changes:**
+- `uv python install 3.12` → CPython 3.12.13 (managed by uv).
+- Backend scaffold: `backend/` with FastAPI app factory, `/api/v1/health`, versioned OpenAPI, CORS allow-list,
+  `pydantic-settings` config; Ruff, mypy strict, Pytest configured; `uv.lock` committed.
+- Frontend scaffold: Vite React-TS template, boilerplate removed, health-status shell with loading/error states,
+  Vitest + Testing Library + jsdom, `typecheck` and `test` scripts, `strict` TypeScript, dev proxy `/api → :8000`.
+- CI: `.github/workflows/ci.yml` (backend + frontend jobs).
+- Repo hygiene: `.gitignore` (secrets, data, model artifacts), `.gitattributes`, `.env.example`.
+- Docs: requirements (FR/NFR/AC/RTM), architecture overview + data model, ADR-0001…0004, this plan and log.
+- `CLAUDE.md`: §8 doc paths updated; §1 requirement table replaced by a pointer to the canonical register (the Step 1 table used a different FR numbering — two schemes would break traceability; no code referenced the old IDs); frontend linter corrected to oxlint; ADR-0001 referenced.
+
+**Commands and results:**
+- `uv run ruff check .` → All checks passed. `uv run ruff format --check .` → 10 files already formatted.
+- `uv run mypy` → Success: no issues found in 10 source files (after fixing 1 lint + 1 type error found on first run).
+- `uv run pytest -q` → 7 passed, 1 warning (Starlette deprecation: `httpx` with `starlette.testclient`; third-party, not suppressed).
+- `npm run lint` → clean. `npm run typecheck` → clean. `npm test` → 2 passed. `npm run build` → built (220 kB JS, 69 kB gzip).
+
+**Not done / blocked:** CI not yet observed running on GitHub (runs on PR). Docker missing (blocks M1 DB work locally).
