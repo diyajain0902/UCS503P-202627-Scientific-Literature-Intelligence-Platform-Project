@@ -24,6 +24,13 @@ class NotFoundError(AppError):
     code = "not_found"
 
 
+class ConflictError(AppError):
+    """The request conflicts with existing state (e.g. a duplicate upload)."""
+
+    status_code = 409
+    code = "conflict"
+
+
 class InvalidInputError(AppError):
     status_code = 422
     code = "invalid_input"

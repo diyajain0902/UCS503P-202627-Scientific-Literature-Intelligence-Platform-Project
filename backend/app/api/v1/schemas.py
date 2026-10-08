@@ -37,6 +37,7 @@ class JobOut(BaseModel):
     kind: str
     state: str
     source_ref: str
+    display_name: str | None
     paper_id: uuid.UUID | None
     error: str | None
     attempts: int

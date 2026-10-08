@@ -40,26 +40,40 @@ def _normalize(page_text: str) -> str:
     return "\n".join(lines).strip()
 
 
-def extract_pdf(data: bytes, max_pages: int) -> ExtractedDocument:
-    """Validate and extract text page by page. Raises ``DocumentRejectedError`` with a
-    user-readable reason.
-    """
+def _open_checked(data: bytes, max_pages: int) -> pymupdf.Document:
+    """Open a PDF and apply the structural checks shared by upload validation and extraction."""
     if not data.startswith(b"%PDF-"):
         raise DocumentRejectedError("File is not a PDF (missing %PDF- header)")
     try:
         document = pymupdf.open(stream=data, filetype="pdf")
     except Exception as exc:  # PyMuPDF raises several unrelated types for corrupt input
         raise DocumentRejectedError("PDF is corrupt or unreadable") from exc
+    if document.needs_pass or document.is_encrypted:
+        document.close()
+        raise DocumentRejectedError("PDF is encrypted or password-protected")
+    if document.page_count == 0:
+        document.close()
+        raise DocumentRejectedError("PDF has no pages")
+    if document.page_count > max_pages:
+        count = document.page_count
+        document.close()
+        raise DocumentRejectedError(f"PDF has {count} pages; the limit is {max_pages}")
+    return document
 
-    with document:
-        if document.needs_pass or document.is_encrypted:
-            raise DocumentRejectedError("PDF is encrypted or password-protected")
-        if document.page_count == 0:
-            raise DocumentRejectedError("PDF has no pages")
-        if document.page_count > max_pages:
-            raise DocumentRejectedError(
-                f"PDF has {document.page_count} pages; the limit is {max_pages}"
-            )
+
+def inspect_pdf(data: bytes, max_pages: int) -> str | None:
+    """Fast structural validation for uploads (FR-03). Returns the embedded title, if any."""
+    with _open_checked(data, max_pages) as document:
+        title = (document.metadata or {}).get("title") or ""
+    cleaned = " ".join(str(title).split())[:300]
+    return cleaned or None
+
+
+def extract_pdf(data: bytes, max_pages: int) -> ExtractedDocument:
+    """Validate and extract text page by page. Raises ``DocumentRejectedError`` with a
+    user-readable reason.
+    """
+    with _open_checked(data, max_pages) as document:
         try:
             pages = [
                 _normalize(document.load_page(index).get_text("text"))

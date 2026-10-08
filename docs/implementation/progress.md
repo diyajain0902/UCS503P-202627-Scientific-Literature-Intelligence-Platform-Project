@@ -2,6 +2,41 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 4: Ingestion and corpus management (branch `feature/m4-corpus-management`)
+
+**M3 note:** PR #6 merged. The first three CI runs of the new `retrieval-eval` job failed at `build-corpus`;
+run 14 (and later runs) passed. Logs were not readable without a GitHub login, so the cause is unconfirmed
+(most likely arXiv throttling GitHub runners). The CLI now emits `::error::` annotations so future failures are
+readable. Expect occasional failures of this job for the same reason.
+
+**Delivered:** PDF upload (`POST /api/v1/papers/upload`: size, signature, corrupt/encrypted, page-limit checks
+before any job; SHA-256 duplicate detection -> 409; server-generated storage names; scanned PDFs fail the job and
+the file is discarded); arXiv keyword search (`GET /api/v1/arxiv/search`, query reduced to safe terms, results
+capped at 25, already-imported versions flagged); job list and retry (`GET /api/v1/jobs`,
+`POST /api/v1/jobs/{id}/retry`, failed jobs only); corpus filters (source, category, year, title with LIKE
+escaping), categories, delete with file clean-up (Q&A history keeps snapshots); `GET /api/v1/stats`;
+read-only `GET /api/v1/settings` (no credentials). Migration `0003` (job kind `pdf_upload`, `display_name`).
+Frontend: Dashboard, Ask, Search, Corpus (filters, details, two-step delete), Add papers (arXiv search, import by
+ID, upload, recent jobs with retry), History (open saved answers), Settings. nginx body limit raised to 55 MB.
+
+**Defects found and fixed during M4:** the shared test-container helper hard-coded upload limits instead of using
+test settings (masked the page-limit test); pytest IDs built from raw PDF bytes overflowed a Windows environment
+variable; the API client would have sent a JSON content type with multipart uploads; a redundant `required` on
+the file input blocked form submission under jsdom.
+
+**Commands and results (local):** ruff, format, mypy strict (66 files) pass; unit **122 passed**;
+`pytest -m "integration or model"` **65 passed** (incl. 15 new corpus-management tests); frontend lint,
+typecheck, build pass, `npm test` **20 passed**.
+
+**Real end-to-end check (Docker stack via nginx, schema revision 0003):** uploaded a real 19-page arXiv PDF ->
+job ready, 83 chunks; re-upload -> 409; non-PDF -> 422 with reason; live arXiv search for "dense passage
+retrieval" -> 10 results; source filter, stats, delete (204 then 404), and settings (no credentials) behaved as
+specified. Dashboard rendered in the browser.
+
+**Not done / limitations:** no authentication (single-user local tool; would be needed before any shared
+deployment); uploaded papers have no authors/abstract metadata; a failed upload whose file was discarded must be
+uploaded again rather than retried.
+
 ## 2026-10-08 — Milestone 3: Evaluation and regression gates (branch `feature/m3-evaluation`)
 
 **Approval:** M3; domain NLP; **the team instructed the AI assistant to write all labels** (ADR-0007; `CLAUDE.md`

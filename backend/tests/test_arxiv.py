@@ -200,3 +200,58 @@ def test_client_rate_limits_consecutive_requests() -> None:
     client.fetch_metadata(ArxivId("2101.00001"))
     client.fetch_metadata(ArxivId("2101.00001"))
     assert time.monotonic() - start >= 0.19
+
+
+FEED = b"""<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><id>http://arxiv.org/abs/2101.00001v2</id><title>First</title></entry>
+  <entry><id>http://arxiv.org/api/errors#bad</id><title>Error</title></entry>
+  <entry><id>http://arxiv.org/abs/2101.00002v1</id><title>Second</title></entry>
+</feed>"""
+
+
+def test_parse_atom_feed_skips_error_entries() -> None:
+    from app.ingestion.arxiv import parse_atom_feed
+
+    assert [(m.arxiv_id, m.version) for m in parse_atom_feed(FEED)] == [
+        ("2101.00001", 2),
+        ("2101.00002", 1),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("text", "query"),
+    [
+        ("attention is all", "all:attention AND all:is AND all:all"),
+        (
+            "BERT; DROP TABLE &id_list=1",
+            "all:BERT AND all:DROP AND all:TABLE AND all:id_list AND all:1",
+        ),
+        ("  graph-nets v2.0 ", "all:graph-nets AND all:v2.0"),
+    ],
+)
+def test_search_query_keeps_only_safe_terms(text: str, query: str) -> None:
+    from app.ingestion.arxiv import build_search_query
+
+    assert build_search_query(text) == query
+
+
+def test_search_query_needs_a_word() -> None:
+    from app.ingestion.arxiv import build_search_query
+
+    with pytest.raises(InvalidInputError):
+        build_search_query("&&& ;;")
+
+
+def test_client_search_sends_sanitized_query() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, content=FEED)
+
+    results = _client(httpx.MockTransport(handler)).search("dense retrieval&max_results=999", 50)
+    assert len(results) == 2
+    params = seen[0].url.params
+    assert params["search_query"] == "all:dense AND all:retrieval AND all:max_results AND all:999"
+    assert params["max_results"] == "25"  # capped

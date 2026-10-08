@@ -1,16 +1,32 @@
 import { useCallback, useState } from 'react'
-import { PaperList } from './features/corpus/PaperList'
+import { CorpusView } from './features/corpus/CorpusView'
+import { Dashboard } from './features/dashboard/Dashboard'
+import { HistoryView } from './features/history/HistoryView'
+import { ArxivSearch } from './features/ingest/ArxivSearch'
 import { ImportForm } from './features/ingest/ImportForm'
+import { RecentJobs } from './features/ingest/RecentJobs'
+import { UploadForm } from './features/ingest/UploadForm'
 import { QAPanel } from './features/qa/QAPanel'
 import { SearchPanel } from './features/search/SearchPanel'
+import { SettingsView } from './features/settings/SettingsView'
 import { BackendStatus } from './features/status/BackendStatus'
 
-type View = 'ask' | 'search'
+const VIEWS = [
+  ['dashboard', 'Dashboard'],
+  ['ask', 'Ask'],
+  ['search', 'Search passages'],
+  ['corpus', 'Corpus'],
+  ['add', 'Add papers'],
+  ['history', 'History'],
+  ['settings', 'Settings'],
+] as const
+
+type View = (typeof VIEWS)[number][0]
 
 function App() {
-  const [corpusVersion, setCorpusVersion] = useState(0)
-  const [view, setView] = useState<View>('ask')
-  const refreshCorpus = useCallback(() => setCorpusVersion((v) => v + 1), [])
+  const [view, setView] = useState<View>('dashboard')
+  const [version, setVersion] = useState(0)
+  const changed = useCallback(() => setVersion((v) => v + 1), [])
 
   return (
     <>
@@ -21,19 +37,29 @@ function App() {
         </div>
       </header>
       <main className="container">
-        <nav className="tabs" aria-label="Mode">
-          <button type="button" aria-pressed={view === 'ask'} onClick={() => setView('ask')}>
-            Ask
-          </button>
-          <button type="button" aria-pressed={view === 'search'} onClick={() => setView('search')}>
-            Search passages
-          </button>
+        <nav className="tabs" aria-label="Sections">
+          {VIEWS.map(([id, label]) => (
+            <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}>
+              {label}
+            </button>
+          ))}
         </nav>
-        {view === 'ask' ? <QAPanel /> : <SearchPanel />}
-        <div className="grid">
-          <ImportForm onImported={refreshCorpus} />
-          <PaperList refreshKey={corpusVersion} />
-        </div>
+        {view === 'dashboard' && <Dashboard refreshKey={version} />}
+        {view === 'ask' && <QAPanel />}
+        {view === 'search' && <SearchPanel />}
+        {view === 'corpus' && <CorpusView refreshKey={version} />}
+        {view === 'add' && (
+          <>
+            <ArxivSearch onImported={changed} />
+            <div className="grid">
+              <ImportForm onImported={changed} />
+              <UploadForm onImported={changed} />
+            </div>
+            <RecentJobs refreshKey={version} onChanged={changed} />
+          </>
+        )}
+        {view === 'history' && <HistoryView refreshKey={version} />}
+        {view === 'settings' && <SettingsView />}
       </main>
     </>
   )

@@ -113,6 +113,11 @@ class FakeArxiv:
         self.downloads += 1
         return self.papers[arxiv_id][1]
 
+    def search(self, text: str, max_results: int) -> list[ArxivMetadata]:
+        words = text.lower().split()
+        hits = [m for m, _ in self.papers.values() if all(w in m.title.lower() for w in words)]
+        return hits[:max_results]
+
 
 class FakeProvider:
     """Scripted stand-in for the local LLM. Records every request it receives."""
@@ -159,15 +164,16 @@ def make_test_container(
     chunking: ChunkingConfig | None = None,
 ) -> Container:
     embedder = HashingEmbedder()
+    store = FileStore(storage)
     ingestion = IngestionService(
         sessions,
         arxiv or FakeArxiv(),
         embedder,
         WhitespaceTokenizer,
-        FileStore(storage),
+        store,
         chunking or ChunkingConfig(256, 38),
-        max_pdf_bytes=5 * 1024 * 1024,
-        max_pdf_pages=10,
+        max_pdf_bytes=settings.max_pdf_bytes,
+        max_pdf_pages=settings.max_pdf_pages,
     )
     search = SearchService(sessions, embedder, settings.search_max_top_k)
     return Container(
@@ -176,7 +182,7 @@ def make_test_container(
         embedder=embedder,
         ingestion=ingestion,
         search=search,
-        corpus=CorpusService(sessions),
+        corpus=CorpusService(sessions, store),
         runner=JobRunner(1, ingestion.run_job),
         qa=QAService(sessions, search, provider or FakeProvider(), qa_limits(settings)),
     )

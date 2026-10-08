@@ -24,7 +24,7 @@ function EvidenceCard({ evidence, selected }: { evidence: QAEvidence; selected: 
   )
 }
 
-function AnswerView({ answer }: { answer: QAAnswer }) {
+export function AnswerView({ answer }: { answer: QAAnswer }) {
   const [selected, setSelected] = useState<string | null>(null)
   const evidenceByLabel = new Map(answer.evidence.map((e) => [e.label, e]))
   const selectedEvidence = selected ? evidenceByLabel.get(selected) : undefined

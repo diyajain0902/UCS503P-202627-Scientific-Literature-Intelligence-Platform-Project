@@ -69,6 +69,8 @@ class ArxivSource(Protocol):
 
     def download_pdf(self, arxiv_id: str, version: int, max_bytes: int) -> bytes: ...
 
+    def search(self, text: str, max_results: int) -> list[ArxivMetadata]: ...
+
 
 def _text(element: Element | None) -> str:
     return " ".join((element.text or "").split()) if element is not None else ""
@@ -81,29 +83,22 @@ def _parse_datetime(value: str) -> datetime | None:
         return None
 
 
-def parse_atom_entry(xml: bytes, requested: ArxivId) -> ArxivMetadata:
-    """Parse an arXiv API Atom response for a single ``id_list`` lookup."""
+def _parse_root(xml: bytes) -> Element:
     try:
-        root = SafeET.fromstring(xml)
+        root: Element = SafeET.fromstring(xml)
     except SafeET.ParseError as exc:
         raise UpstreamError("arXiv returned malformed XML") from exc
+    return root
 
-    entries = root.findall(f"{_ATOM}entry")
-    if not entries:
-        raise NotFoundError(f"arXiv has no paper with identifier {requested}")
-    entry = entries[0]
+
+def _entry_metadata(entry: Element) -> ArxivMetadata | None:
+    """Metadata for one Atom entry, or None for arXiv's error pseudo-entries."""
     entry_id = _text(entry.find(f"{_ATOM}id"))
     if "/api/errors" in entry_id:
-        raise NotFoundError(
-            f"arXiv rejected identifier {requested}: {_text(entry.find(f'{_ATOM}summary'))}"
-        )
-
+        return None
     match = re.search(r"/abs/(?P<id>.+?)v(?P<version>\d+)$", entry_id)
     if match is None:
         raise UpstreamError("arXiv response is missing a versioned identifier")
-    if match.group("id") != requested.base:
-        raise UpstreamError("arXiv returned a different paper than requested")
-
     title = _text(entry.find(f"{_ATOM}title"))
     if not title:
         raise UpstreamError("arXiv response is missing the paper title")
@@ -115,7 +110,6 @@ def parse_atom_entry(xml: bytes, requested: ArxivId) -> ArxivMetadata:
     if primary_term and primary_term in categories:
         categories.remove(primary_term)
         categories.insert(0, primary_term)
-
     return ArxivMetadata(
         arxiv_id=match.group("id"),
         version=int(match.group("version")),
@@ -126,6 +120,46 @@ def parse_atom_entry(xml: bytes, requested: ArxivId) -> ArxivMetadata:
         published_at=_parse_datetime(_text(entry.find(f"{_ATOM}published"))),
         updated_at=_parse_datetime(_text(entry.find(f"{_ATOM}updated"))),
     )
+
+
+def parse_atom_entry(xml: bytes, requested: ArxivId) -> ArxivMetadata:
+    """Parse an arXiv API Atom response for a single ``id_list`` lookup."""
+    entries = _parse_root(xml).findall(f"{_ATOM}entry")
+    if not entries:
+        raise NotFoundError(f"arXiv has no paper with identifier {requested}")
+    meta = _entry_metadata(entries[0])
+    if meta is None:
+        summary = _text(entries[0].find(f"{_ATOM}summary"))
+        raise NotFoundError(f"arXiv rejected identifier {requested}: {summary}")
+    if meta.arxiv_id != requested.base:
+        raise UpstreamError("arXiv returned a different paper than requested")
+    return meta
+
+
+def parse_atom_feed(xml: bytes) -> list[ArxivMetadata]:
+    """Parse an arXiv search response (FR-01)."""
+    results = []
+    for entry in _parse_root(xml).findall(f"{_ATOM}entry"):
+        meta = _entry_metadata(entry)
+        if meta is not None:
+            results.append(meta)
+    return results
+
+
+_QUERY_TERM = re.compile(r"[\w.-]+", re.UNICODE)
+MAX_SEARCH_RESULTS = 25
+
+
+def build_search_query(text: str) -> str:
+    """Turn free text into an arXiv ``search_query``: every word must match (all fields).
+
+    Only word characters, dots, and hyphens are kept, so user input cannot inject arXiv query
+    operators or parameters.
+    """
+    terms = _QUERY_TERM.findall(text)[:12]
+    if not terms:
+        raise InvalidInputError("search text must contain at least one word")
+    return " AND ".join(f"all:{term}" for term in terms)
 
 
 class ArxivClient:
@@ -211,6 +245,18 @@ class ArxivClient:
             params={"id_list": str(arxiv_id), "max_results": "1"},
         )
         return parse_atom_entry(response.content, arxiv_id)
+
+    def search(self, text: str, max_results: int) -> list[ArxivMetadata]:
+        response = self._get(
+            self._api_url,
+            _MAX_METADATA_BYTES,
+            params={
+                "search_query": build_search_query(text),
+                "max_results": str(min(max(max_results, 1), MAX_SEARCH_RESULTS)),
+                "sortBy": "relevance",
+            },
+        )
+        return parse_atom_feed(response.content)
 
     def download_pdf(self, arxiv_id: str, version: int, max_bytes: int) -> bytes:
         url = urljoin(self._pdf_base_url, f"{arxiv_id}v{version}")

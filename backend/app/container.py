@@ -55,6 +55,7 @@ def build_container(settings: Settings) -> Container:
     engine = make_engine(settings.database_url)
     session_factory = make_session_factory(engine)
     chunking = ChunkingConfig(settings.chunk_window_tokens, settings.chunk_overlap_tokens)
+    store = FileStore(settings.storage_dir)
     embedder = SentenceTransformerEmbedder(
         model_name=settings.embedding_model,
         dimension=settings.embedding_dimension,
@@ -74,7 +75,7 @@ def build_container(settings: Settings) -> Container:
         arxiv=arxiv,
         embedder=embedder,
         tokenizer_provider=embedder.tokenizer,
-        store=FileStore(settings.storage_dir),
+        store=store,
         chunking=chunking,
         max_pdf_bytes=settings.max_pdf_bytes,
         max_pdf_pages=settings.max_pdf_pages,
@@ -96,7 +97,7 @@ def build_container(settings: Settings) -> Container:
         embedder=embedder,
         ingestion=ingestion,
         search=search,
-        corpus=CorpusService(session_factory),
+        corpus=CorpusService(session_factory, store),
         runner=JobRunner(settings.ingestion_workers, ingestion.run_job),
         qa=QAService(session_factory, search, ollama, qa_limits(settings)),
         engine=engine,

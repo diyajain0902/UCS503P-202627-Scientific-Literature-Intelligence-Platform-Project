@@ -15,11 +15,11 @@ Each criterion `AC-<req>.<n>` must be verifiable by an automated test, an evalua
 - AC-02.2 Re-import of a newer version updates metadata and re-chunks; the version used is recorded.
 
 **FR-03 PDF upload**
-- AC-03.1 Files over the configured size or page limit are rejected (HTTP 413/422) before full processing.
-- AC-03.2 Non-PDF content (by magic bytes, not just extension), encrypted PDFs, and corrupt PDFs are rejected with specific messages.
-- AC-03.3 PDFs with no extractable text layer are rejected with "scanned PDF — OCR not supported".
-- AC-03.4 Stored filenames are server-generated; user-supplied names never form a filesystem path (path-traversal test).
-- AC-03.5 Identical file content (SHA-256) is detected and not ingested twice.
+- AC-03.1 Files over the configured size or page limit are rejected (HTTP 413/422) before full processing. *(M4: verified — 422 with reason)*
+- AC-03.2 Non-PDF content (by magic bytes, not just extension), encrypted PDFs, and corrupt PDFs are rejected with specific messages. *(M4: verified)*
+- AC-03.3 PDFs with no extractable text layer are rejected with "scanned PDF — OCR not supported". *(M4: verified — job fails, file discarded)*
+- AC-03.4 Stored filenames are server-generated; user-supplied names never form a filesystem path (path-traversal test). *(M4: verified)*
+- AC-03.5 Identical file content (SHA-256) is detected and not ingested twice. *(M4: verified — HTTP 409)*
 
 **FR-04 Extraction**
 - AC-04.1 Extracted text carries 1-based page numbers and character offsets that reproduce the text when sliced.
@@ -83,8 +83,8 @@ Each criterion `AC-<req>.<n>` must be verifiable by an automated test, an evalua
 
 ## Corpus management (M4)
 
-- AC-16.1 Paper list supports pagination and filters (source, year, category, ingestion status).
-- AC-16.2 Delete requires explicit confirmation in the UI and removes all derived data (AC-07.3).
+- AC-16.1 Paper list supports pagination and filters (source, year, category, title). *(M4: verified; ingestion status is shown on the jobs list instead of as a paper filter)*
+- AC-16.2 Delete requires explicit confirmation in the UI and removes all derived data (AC-07.3). *(M4: verified)*
 
 ## Evaluation (M3)
 
