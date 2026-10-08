@@ -1,6 +1,6 @@
 # ADR-0004: Python 3.12 via uv; Docker required for PostgreSQL + pgvector
 
-- Status: Accepted for Python; **Docker installation pending (team action)**
+- Status: Accepted for Python; Docker installation pending (team action). DB tests run in CI meanwhile.
 - Date: 2026-10-08
 
 ## Context
@@ -22,3 +22,9 @@ PyTorch (required by sentence-transformers) and some scientific packages often l
 - **Blocker for M1:** Docker Desktop (which needs WSL2 or Hyper-V) must be installed by the team. Until then,
   database-dependent integration tests cannot run locally; they can still run in GitHub Actions using a
   `pgvector/pgvector` service container.
+
+## Addendum (2026-10-08): minimum pgvector version
+
+Search requires **pgvector ≥ 0.8.0** (`hnsw.iterative_scan`). The backend checks the installed version and reports
+an older one via `/ready` and HTTP 503 rather than failing queries. Docker Compose and CI pin
+`pgvector/pgvector:0.8.0-pg17`. Native installs must provide 0.8.0 or newer.

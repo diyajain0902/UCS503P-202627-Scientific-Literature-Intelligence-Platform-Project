@@ -2,6 +2,67 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 1 addendum: local database verification and pgvector defect
+
+**Docker:** not installed. Installing Docker Desktop requires enabling WSL2/Hyper-V (Windows system features,
+administrator rights, reboot) and accepting Docker's licence; left to the team.
+
+**Workaround used (no system changes):** `pgserver` (PyPI) in a throwaway venv under `%TEMP%\slippg`, providing
+PostgreSQL 16.2 with **pgvector 0.6.2** on `localhost:5433` (trust auth, localhost only). Stopped afterwards.
+
+**Defect found and fixed:** pgvector < 0.8.0 rejects `hnsw.iterative_scan` ("reserved prefix"), so every search
+returned an unexplained HTTP 500. Fix: `app/retrieval/search.py` checks the installed pgvector version; search returns
+HTTP 503 `dependency_unavailable` ("pgvector 0.6.2 is installed; 0.8.0 or newer is required") and `/ready` reports
+the same. Regression tests: `tests/test_pgvector_version.py` (10 tests). Docker Compose and CI pin 0.8.0.
+
+**Local results against PostgreSQL 16.2 + pgvector 0.6.2:**
+- `pytest -m integration` → **24 passed, 4 failed**. The 4 failures are the search/readiness tests, failing with
+  the new explicit 503 because 0.6.2 is below the minimum — expected; they pass on 0.8.0 in CI.
+- Unit suite → **85 passed**. Ruff, mypy strict → pass.
+
+**Real end-to-end ingestion (first time with every real component):** backend via `uvicorn`, `POST /papers/arxiv`
+`1706.03762v7` → job `ready` after 75 s (includes rate-limit wait and MiniLM load). Stored: title "Attention Is All
+You Need", 15 pages, 45 chunks, token counts 244–254, all vectors 384-dim, 15 chunks spanning two pages,
+chunker `tokwin-v1|sentence-transformers/all-MiniLM-L6-v2|w256|o38`, extractor `pymupdf-1.28.2/v1`.
+Logs contained event names, IDs, and sizes only. Search on this database correctly returned the 503 above.
+
+**Still not verified locally:** search on pgvector ≥ 0.8.0 (verified in CI only); `docker compose up`.
+
+## 2026-10-08 — Milestone 1: Runnable vertical slice (branch `feature/m1-vertical-slice`)
+
+**Approvals received:** M1 scope; ADR-0003 (256-token window, 38 overlap); team to install Docker.
+
+**M0 re-validation:** PR #2 merged; CI green on the PR and on `main` → IR-04 verified.
+
+**Delivered:** arXiv import by ID (allow-listed HTTPS hosts, rate-limited, size-capped, defusedxml);
+PyMuPDF page-aware extraction with rejection of non-PDF/corrupt/encrypted/oversized/text-less PDFs;
+deterministic token-window chunking on the MiniLM tokenizer; MiniLM embeddings with dimension and
+input-length validation; PostgreSQL + pgvector schema (migration `0001`, HNSW cosine index, constraints);
+in-process job runner (ADR-0005); `/papers/arxiv`, `/jobs/{id}`, `/papers`, `/papers/{id}`, `/search`, `/ready`;
+error envelope; JSON logs with request IDs; React UI (status bar, import with live job state, corpus list,
+search results with pages, scores, arXiv links); Docker Compose (localhost-only ports) and Dockerfiles;
+CI jobs for integration tests (pgvector service + real model) and image builds.
+
+**Environment facts found:** uv must use `link-mode = "copy"` inside OneDrive (hardlinks rejected, os error 396).
+First MiniLM download + load took 272.8 s on this network; encode of 64 short sentences on CPU: 0.16 s.
+Verified `max_seq_length = 256`, dimension 384, vectors L2-normalized.
+
+**Commands and results (local, Windows, Python 3.12.13):**
+- `uv run ruff check .` / `ruff format --check .` → pass. `uv run mypy` (strict) → no issues in 45 files.
+- `uv run pytest -m "not integration and not model and not network"` → **75 passed**.
+  First run had 2 failures caused by a wrong test case (`1706.0376` is a valid pre-2015 ID format); test fixed.
+- `uv run pytest -m "model or network"` → **5 passed** (real MiniLM; live arXiv fetch of 1706.03762v1 + extraction).
+- `uv run pytest` without `SLIP_TEST_DATABASE_URL` → 28 integration tests **skipped** locally (no Docker).
+- Frontend: `lint`, `typecheck`, `build` pass; `npm test` → **10 passed** (4 files).
+
+**CI (GitHub Actions run 37683723123, commit 903339d):** `frontend`, `backend`, `backend-integration`
+(28 integration + 4 model tests against `pgvector/pgvector:0.8.0-pg17`), `docker-images` (compose config +
+build) → all **success**. Per-test counts in CI logs were not retrieved (log download requires authentication);
+job success means pytest exited 0 and the DB URL was set, so no integration test could skip.
+
+**Not verified:** `docker compose up` end-to-end on the reference machine; real-model ingestion of a real arXiv
+PDF through the full pipeline into PostgreSQL (each half verified separately); search latency; retrieval quality.
+
 ## 2026-10-08 — Milestone 0: Assessment and foundation
 
 **Baseline (before changes):** repository contained only `README.md` (title line), `CLAUDE.md`, and

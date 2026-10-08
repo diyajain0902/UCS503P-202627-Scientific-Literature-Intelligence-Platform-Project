@@ -19,7 +19,7 @@ Each milestone lands on its own branch(es) and merges to `main` via PR after the
 
 ## Open decisions needing team input
 
-1. Approve ADR-0003 (256-token chunks instead of ≈500) before M1 chunking.
-2. Install Docker Desktop (ADR-0004) before M1 database work.
+1. ~~Approve ADR-0003~~ — approved 2026-10-08.
+2. Install Docker Desktop (ADR-0004) — still pending; needed to verify `docker compose up` locally.
 3. Choose the eval-corpus domain (proposal suggests NLP) and who labels questions (M3; labels must be human).
 4. Whether to amend the course proposal for ADR-0001 (Gemini → Ollama).
