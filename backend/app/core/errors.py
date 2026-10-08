@@ -48,6 +48,20 @@ class DependencyUnavailableError(AppError):
     code = "dependency_unavailable"
 
 
+class GenerationTimeoutError(AppError):
+    """The local model did not answer within the configured timeout."""
+
+    status_code = 504
+    code = "generation_timeout"
+
+
+class MalformedModelOutputError(AppError):
+    """The local model returned output that does not match the required schema (AC-09.3)."""
+
+    status_code = 502
+    code = "malformed_model_output"
+
+
 def _envelope(code: str, message: str, status_code: int) -> JSONResponse:
     return JSONResponse(
         status_code=status_code, content={"error": {"code": code, "message": message}}

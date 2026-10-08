@@ -54,25 +54,25 @@ Each criterion `AC-<req>.<n>` must be verifiable by an automated test, an evalua
 - AC-08.4 Search works while Ollama is unavailable.
 
 **FR-09 Grounded Q&A**
-- AC-09.1 The prompt contains only retrieved passages as evidence, clearly delimited and labelled as untrusted.
-- AC-09.2 The model is called with explicit timeout, max tokens, temperature, and context size from config.
-- AC-09.3 Model output is parsed into a validated schema; malformed output yields an explicit error state, not a fabricated answer.
-- AC-09.4 Ollama down, model missing, and timeout each map to distinct, documented errors (tests with a fake provider).
-- AC-09.5 Each answer records model tag, prompt version, retrieval config, and latency.
+- AC-09.1 The prompt contains only retrieved passages as evidence, clearly delimited and labelled as untrusted. *(M2: verified)*
+- AC-09.2 The model is called with explicit timeout, max tokens, temperature, and context size from config. *(M2: verified)*
+- AC-09.3 Model output is parsed into a validated schema; malformed output yields an explicit error state, not a fabricated answer. *(M2: verified)*
+- AC-09.4 Ollama down, model missing, and timeout each map to distinct, documented errors (tests with a fake provider). *(M2: verified — 503 / 503 / 504; malformed output 502)*
+- AC-09.5 Each answer records model tag, prompt version, retrieval config, and latency. *(M2: verified)*
 
 **FR-10 Citations**
-- AC-10.1 Every citation ID in the output is checked against the set of chunks supplied in context; unknown IDs are flagged `invalid` and not rendered as valid.
-- AC-10.2 Each valid citation resolves to paper, page(s), and the exact passage text.
-- AC-10.3 Claims without any valid citation are marked `unsupported`.
-- AC-10.4 Deterministic citation validity is reported separately from semantic support (groundedness).
+- AC-10.1 Every citation in the output is checked against the passages supplied in context (labels `P1..Pn`, mapped server-side to chunks); unknown labels are flagged `invalid` and not rendered as valid. *(M2: verified)*
+- AC-10.2 Each valid citation resolves to paper, page(s), and the exact passage text. *(M2: verified, incl. UI inspector)*
+- AC-10.3 Claims without any valid citation are marked `unsupported`. *(M2: verified)*
+- AC-10.4 Deterministic citation validity is reported separately from semantic support (groundedness). *(M2: `support=cited` documented as not semantically verified; groundedness metric in M3/M5)*
 
 **FR-11 Abstention**
-- AC-11.1 When no retrieved passage passes the relevance threshold, the system returns `insufficient_evidence` without calling the model.
-- AC-11.2 When the model reports insufficient evidence, the response is `insufficient_evidence` with retrieved passages shown for inspection.
+- AC-11.1 When no retrieved passage passes the relevance threshold, the system returns `insufficient_evidence` without calling the model. *(M2: verified)*
+- AC-11.2 When the model reports insufficient evidence, the response is `insufficient_evidence` with retrieved passages shown for inspection. *(M2: verified)*
 - AC-11.3 Unanswerable eval questions are used to measure abstention (NFR-07).
 
 **FR-18 History**
-- AC-18.1 Each Q&A request persists question, answer, citations, validation status, config, and latency.
+- AC-18.1 Each Q&A request persists question, answer, citations, validation status, config, and latency. *(M2: verified)*
 
 ## Summaries, extraction, comparison (M5)
 

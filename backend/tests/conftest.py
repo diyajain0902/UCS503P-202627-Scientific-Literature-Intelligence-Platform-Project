@@ -53,5 +53,10 @@ def migrated_engine(database_url: str) -> Iterator[Engine]:
 @pytest.fixture
 def sessions(migrated_engine: Engine) -> sessionmaker[Session]:
     with migrated_engine.begin() as connection:
-        connection.execute(text("TRUNCATE papers, documents, chunks, ingestion_jobs CASCADE"))
+        connection.execute(
+            text(
+                "TRUNCATE papers, documents, chunks, ingestion_jobs, queries, answers, "
+                "answer_evidence, answer_citations CASCADE"
+            )
+        )
     return make_session_factory(migrated_engine)

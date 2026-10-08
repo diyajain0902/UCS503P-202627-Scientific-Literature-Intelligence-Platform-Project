@@ -6,17 +6,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.container import Container
 from app.core.config import Settings
 from app.db.session import make_engine, make_session_factory
-from app.ingestion.chunking import ChunkingConfig
-from app.ingestion.storage import FileStore
 from app.main import create_app
-from app.services.corpus import CorpusService
-from app.services.ingestion import IngestionService
-from app.services.jobs import JobRunner
-from app.services.search import SearchService
-from tests.fakes import FakeArxiv, HashingEmbedder, WhitespaceTokenizer
+from tests.fakes import make_test_container
 
 # Port 1 on localhost refuses connections immediately: any accidental DB access fails fast.
 UNREACHABLE_DB = "postgresql+psycopg://nobody:nothing@127.0.0.1:1/none?connect_timeout=1"
@@ -31,26 +24,7 @@ def client(tmp_path: Path) -> Iterator[TestClient]:
         search_max_query_chars=50,
     )
     sessions = make_session_factory(make_engine(settings.database_url))
-    embedder = HashingEmbedder()
-    ingestion = IngestionService(
-        sessions,
-        FakeArxiv(),
-        embedder,
-        WhitespaceTokenizer,
-        FileStore(tmp_path),
-        ChunkingConfig(256, 38),
-        1024,
-        10,
-    )
-    container = Container(
-        settings=settings,
-        session_factory=sessions,
-        embedder=embedder,
-        ingestion=ingestion,
-        search=SearchService(sessions, embedder, settings.search_max_top_k),
-        corpus=CorpusService(sessions),
-        runner=JobRunner(1, ingestion.run_job),
-    )
+    container = make_test_container(settings, sessions, tmp_path)
     with TestClient(create_app(container=container)) as test_client:
         yield test_client
     container.close()

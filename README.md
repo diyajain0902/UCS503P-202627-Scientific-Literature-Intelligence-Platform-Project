@@ -4,9 +4,9 @@ UCS503P 202627 Scientific Literature Intelligence Platform Project — a retriev
 answers questions over arXiv and uploaded papers with citations to source pages. Everything runs locally
 (sentence-transformers embeddings, PostgreSQL + pgvector, Ollama for generation).
 
-**Status:** Milestone 1 (vertical slice). Working: arXiv import by ID → page-aware extraction → chunking →
-local embeddings → pgvector semantic search, with a web UI. Not yet: grounded Q&A (M2), evaluation (M3),
-PDF upload and corpus management (M4).
+**Status:** Milestone 2. Working: arXiv import by ID → page-aware extraction → chunking → local embeddings →
+pgvector semantic search, and grounded Q&A with the local Ollama model (citations checked server-side, explicit
+"insufficient evidence"). Not yet: evaluation (M3), PDF upload and corpus management (M4), summaries (M5).
 
 ## Layout
 
@@ -64,13 +64,19 @@ cd frontend && npm install && npm run dev
 Backend unit tests, lint, types:
 
 ```bash
-cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest -m "not integration and not model and not network"
+cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest -m "not integration and not model and not network and not ollama"
 ```
 
 Backend integration tests (need the `slip_test` database the compose `db` service creates, and `SLIP_TEST_DATABASE_URL`):
 
 ```bash
 cd backend && uv run pytest -m "integration or model"
+```
+
+Real local model checks (manual; needs Ollama with `qwen2.5:3b`):
+
+```bash
+cd backend && uv run pytest -m ollama
 ```
 
 Live arXiv check (manual, network):
@@ -93,4 +99,7 @@ cd frontend && npm run lint && npm run typecheck && npm test && npm run build
   (pgvector 0.8.0) or upgrade the extension.
 - Database connections take ~15 s each on Windows: use `127.0.0.1`, not `localhost`, in `SLIP_DATABASE_URL`.
   `localhost` resolves to IPv6 `::1` first, and Docker publishes PostgreSQL on `127.0.0.1` only.
+- Docker build fails with `invalid file request <path>`: OneDrive cloud placeholders. Move the repository
+  out of OneDrive (recommended), or build from a copy outside it.
+- Q&A returns 503 "Ollama is not reachable": start Ollama. 503 "not installed": `ollama pull qwen2.5:3b`.
 - An import fails with "Interrupted by a server restart": the backend restarted mid-job; import the paper again.

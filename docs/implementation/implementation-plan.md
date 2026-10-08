@@ -23,3 +23,7 @@ Each milestone lands on its own branch(es) and merges to `main` via PR after the
 2. ~~Install Docker Desktop~~ — done 2026-10-08; `docker compose up` verified.
 3. Choose the eval-corpus domain (proposal suggests NLP) and who labels questions (M3; labels must be human).
 4. Whether to amend the course proposal for ADR-0001 (Gemini → Ollama).
+
+## Status
+
+- M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done, pending merge (`feature/m2-grounded-qa`).

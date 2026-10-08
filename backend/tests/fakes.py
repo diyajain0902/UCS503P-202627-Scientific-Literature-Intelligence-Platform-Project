@@ -1,14 +1,26 @@
 """Controlled test doubles. Everything here is synthetic; never present it as real data."""
 
 import hashlib
+import json
 import math
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pymupdf
+from sqlalchemy.orm import Session, sessionmaker
 
+from app.container import Container, qa_limits
+from app.core.config import Settings
+from app.generation.provider import GenerationRequest, GenerationResult
 from app.ingestion.arxiv import ArxivId, ArxivMetadata
-from app.ingestion.chunking import Tokenizer
+from app.ingestion.chunking import ChunkingConfig, Tokenizer
+from app.ingestion.storage import FileStore
+from app.services.corpus import CorpusService
+from app.services.ingestion import IngestionService
+from app.services.jobs import JobRunner
+from app.services.qa import QAService
+from app.services.search import SearchService
 
 DIMENSION = 384
 _WORD = re.compile(r"\S+")
@@ -100,3 +112,71 @@ class FakeArxiv:
     def download_pdf(self, arxiv_id: str, version: int, max_bytes: int) -> bytes:
         self.downloads += 1
         return self.papers[arxiv_id][1]
+
+
+class FakeProvider:
+    """Scripted stand-in for the local LLM. Records every request it receives."""
+
+    model_name = "test-fake-llm"
+
+    def __init__(self, responses: list[str] | None = None, error: Exception | None = None) -> None:
+        self.options: dict[str, object] = {"num_ctx": 4096, "temperature": 0.0}
+        self.responses = list(responses or [])
+        self.error = error
+        self.requests: list[GenerationRequest] = []
+
+    def generate(self, request: GenerationRequest) -> GenerationResult:
+        self.requests.append(request)
+        if self.error is not None:
+            raise self.error
+        text = (
+            self.responses.pop(0)
+            if self.responses
+            else '{"status":"insufficient_evidence","claims":[]}'
+        )
+        return GenerationResult(
+            text=text,
+            model=self.model_name,
+            prompt_tokens=100,
+            completion_tokens=20,
+            duration_ms=1.0,
+            truncated=False,
+        )
+
+
+def answer_json(*claims: tuple[str, list[str]], status: str = "answered") -> str:
+    return json.dumps(
+        {"status": status, "claims": [{"text": t, "citations": c} for t, c in claims]}
+    )
+
+
+def make_test_container(
+    settings: Settings,
+    sessions: sessionmaker[Session],
+    storage: Path,
+    arxiv: FakeArxiv | None = None,
+    provider: FakeProvider | None = None,
+    chunking: ChunkingConfig | None = None,
+) -> Container:
+    embedder = HashingEmbedder()
+    ingestion = IngestionService(
+        sessions,
+        arxiv or FakeArxiv(),
+        embedder,
+        WhitespaceTokenizer,
+        FileStore(storage),
+        chunking or ChunkingConfig(256, 38),
+        max_pdf_bytes=5 * 1024 * 1024,
+        max_pdf_pages=10,
+    )
+    search = SearchService(sessions, embedder, settings.search_max_top_k)
+    return Container(
+        settings=settings,
+        session_factory=sessions,
+        embedder=embedder,
+        ingestion=ingestion,
+        search=search,
+        corpus=CorpusService(sessions),
+        runner=JobRunner(1, ingestion.run_job),
+        qa=QAService(sessions, search, provider or FakeProvider(), qa_limits(settings)),
+    )
