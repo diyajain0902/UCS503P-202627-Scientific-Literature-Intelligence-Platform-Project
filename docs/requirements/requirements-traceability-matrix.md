@@ -3,7 +3,7 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-08 (Milestone 5).
+Last updated: 2026-10-09 (Milestone 7).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|
@@ -27,11 +27,11 @@ Last updated: 2026-10-08 (Milestone 5).
 | FR-18 | M2, M4 | Q&A tables (0002), `GET /api/v1/qa[/{id}]`, `frontend/src/features/history/HistoryView.tsx` | `test_qa_integration.py`; `m4.test.tsx` (open saved answer) | NFR-09 | Verified |
 | FR-19 | M3 | `backend/app/evaluation/` (`dataset.py`, `metrics.py`, `corpus.py`, `runner.py`, `__main__.py`), `eval/corpus.json`, `eval/qa_v1.json`, `eval/runs/` | `test_eval_metrics.py` (hand-computed); `test_eval_integration.py` (corpus verify, label check, runs, records); baseline runs | NFR-01, NFR-02 | Verified (tooling); labels AI-written, unreviewed (ADR-0007) |
 | FR-20 | M3, M5 | `backend/app/evaluation/runner.py::run_qa`, `backend/app/evaluation/groundedness.py` | `test_eval_integration.py`; `test_generation.py::test_judge_parses_verdicts_and_tolerates_bad_output`; run `20261008T182021Z_qa_6080738.json` | NFR-03, NFR-06, NFR-07 | Verified (measured; groundedness self-judged, not human-validated) |
-| FR-21 | M3 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI job builds corpus from arXiv and gates Recall@5 ≥ 0.675 | NFR-01 | Implemented; first CI result recorded in progress log |
+| FR-21 | M3, M7 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI gates `hybrid_rerank` Recall@5 ≥ 0.85 and `dense` ≥ 0.675 (M7; justification in progress log) | NFR-01 | Implemented; CI result for the M7 gate not yet observed |
 | FR-22 | M4 | `GET /api/v1/stats`, `frontend/src/features/dashboard/Dashboard.tsx` | `test_corpus_management.py::test_stats_and_settings`; `m4.test.tsx` | — | Verified |
 | FR-23 | M4 | `GET /api/v1/settings`, `frontend/src/features/settings/SettingsView.tsx` | `test_corpus_management.py::test_stats_and_settings` (no DB URL or password exposed) | — | Verified |
-| FR-24 | M6 | `backend/app/retrieval/search.py` (`search_hybrid_chunks`, `search_bm25_chunks`), `Migration 0005` | `test_search_hybrid.py` (RRF rank fusion, mode routing); eval runs `eval/runs/` | NFR-01 | Verified (Recall@5 = 0.725 / 0.875 with reranker) |
-| FR-25 | M6 | `backend/app/retrieval/rerank.py` (`CrossEncoderReranker`) | `test_reranker.py`; eval runs `eval/runs/` | NFR-01, NFR-03 | Verified (MRR = 0.662, Recall@5 = 0.875) |
+| FR-24 | M6, M7 | `backend/app/retrieval/search.py` (`search_bm25_chunks`, `search_hybrid_chunks`, `bm25_terms`), migrations 0005–0006 (`chunks.text_tsv`) | `test_search_hybrid.py` (RRF, tie-break, cosine score kept, term sanitising, recorded config); `test_search_integration.py` (all four modes; stored tsvector + GIN index); `test_stack_e2e.py` (all modes on the live stack); run `20261008T203825Z_retrieval_192ac2b.json` | NFR-01 | Verified (hybrid Recall@5 0.725) |
+| FR-25 | M6, M7 | `backend/app/retrieval/rerank.py` (`CrossEncoderReranker`), `SLIP_SEARCH_MODE=hybrid_rerank` (default) | `test_reranker.py` (ordering, cosine score preserved, load failure → 503); run `20261008T204032Z_retrieval_192ac2b.json`; Q&A runs `20261008T204611Z`, `20261008T205117Z` | NFR-01, NFR-03 | Verified (Recall@5 0.875, MRR 0.701). Adopted although it costs ~1.1 s per Q&A, which takes NFR-03 out of reach (ADR-0008) |
 | FR-26 | — | — | — | — | Deferred (scanned PDFs rejected per AC-03.3) |
 | IR-01 | M0+ | `backend/app/main.py`, `backend/app/api/v1/`, `backend/app/core/errors.py` | `test_health.py`; `test_api_validation.py` (error envelope, pagination bounds); 404 envelope in `test_search_integration.py` | — | Verified |
 | IR-02 | M0 | `backend/app/core/config.py`, `.env.example`, `.gitignore` | `tests/test_config.py` (4 tests) | — | Verified |
@@ -41,22 +41,25 @@ Last updated: 2026-10-08 (Milestone 5).
 | IR-06 | M1 | `backend/app/core/logging.py` | `test_api_validation.py::test_request_id_header` | NFR-11 | Implemented, partially verified — JSON formatter not unit-tested; logs carry IDs/sizes only by design |
 | IR-07 | M2 | `backend/app/generation/ollama.py`, `provider.py` | `test_generation.py` (options, schema, unreachable 503, missing model 503, timeout 504, bad output 502, truncation flag, warm-up) | NFR-16 | Verified |
 | IR-08 | M1 | `backend/app/services/jobs.py` (ADR-0005) | `test_search_integration.py` (HTTP import runs in background, polled to ready) | — | Verified |
-| IR-09 | Ongoing | `README.md`, `docs/` | — | — | Partial |
-| NFR-10 | M0, M1 | `backend/app/main.py`, `backend/app/ingestion/arxiv.py`, `backend/app/ingestion/storage.py`, `docker-compose.yml` | CORS test; SSRF allow-list + redirect tests; storage path-traversal tests; parameterized SQL via ORM; defusedxml entity test; localhost-only ports | — | Partial — upload controls (M4) and security audit pending |
+| IR-09 | M7 | `README.md`, `docs/operations.md`, `docs/handover.md`, `docs/security.md`, `docs/audits/` | Docs written in M7 against the running stack (commands executed as documented) | — | Implemented; team review pending |
+| NFR-10 | M0, M1, M4, M7 | `backend/app/main.py`, `ingestion/arxiv.py`, `ingestion/storage.py`, `frontend/nginx.conf`, `docker-compose.yml` | `docs/audits/2026-10-09-security-privacy-audit.md`; `test_health.py` (CORS); `test_arxiv.py` (allowed redirect only); `test_storage.py::test_rejects_unsafe_keys`; nginx headers checked with `curl -I` | — | Partial — open: S1 superuser DB role, S2 no PDF parse timeout, S4 backend body cap (`docs/security.md` §3) |
+| NFR-05 | M7 | `scripts/uptime_probe.py`, `eval/uptime/` | 60-minute pilot window (progress log, M7) | NFR-05 | See pilot result in progress log; one short window is not a semester-scale pilot |
+| NFR-09 | M2, M3, M7 | `services/qa.py`, `services/analysis.py`, `services/search.py::describe`, `evaluation/runner.py` | Answers, analyses, and run records store model, embedding model, chunker, top-k, prompt version, and (from M7) retrieval mode/RRF/reranker; `test_search_hybrid.py::test_describe_records_retrieval_configuration` | — | Verified |
+| NFR-11 | M1, M7 | all `logger.*` calls; `generation/ollama.py` | Log-call review (security audit); no hosted provider in code | — | Verified by review |
 | NFR-16 | M2 | `backend/app/services/qa.py`, `backend/app/api/v1/health.py` | `test_qa_integration.py::test_generation_failures_are_explicit_and_recorded` (search still 200 while generation fails) | — | Verified |
-| NFR-08 | M1 | `backend/app/ingestion/` | determinism tests for extraction, chunk text and IDs; deterministic search ordering (tie-break on chunk ID) | — | Partial — retrieval-ranking reproducibility on eval set in M3 |
-| NFR-12 | M1 | `backend/app/core/config.py` | size/page caps, top_k/query/pagination bounds tested | — | Partial — generation bounds M2, upload M4 |
+| NFR-08 | M1, M3, M7 | `backend/app/ingestion/`, `backend/app/retrieval/search.py` | determinism tests for extraction, chunk text and IDs; ranking tie-breaks on chunk ID (dense and RRF); identical retrieval metrics across runs `3eab94d` / `0006bbd` / `192ac2b` (CI/CD audit §3) | — | Verified for retrieval; generation not bit-reproducible (reported as ranges) |
+| NFR-12 | M1, M2, M4 | `backend/app/core/config.py`, `api/v1/*` | size/page caps, top_k/query/pagination bounds, generation token/context/timeout bounds tested | — | Partial — no PDF parse timeout (S2); backend JSON body size uncapped when called directly on :8000 (S4) |
 | NFR-15 | M0+ | `frontend/src/features/` | Role/label-based queries in all component tests; responsive grid; sr-only status text | — | Partial — no manual accessibility audit yet |
 
 Planned module paths are indicative and will be corrected here when code lands.
 
-## Non-functional targets measured in M3
+## Non-functional targets (M3 baseline; M7 re-measurement with the M6 default retrieval)
 
-| NFR | Target | Measured (M3 baseline) | Status |
-|-----|--------|------------------------|--------|
-| NFR-01 | Recall@5 ≥ 0.80 | 0.700 | **Not met** |
-| NFR-02 | MRR reported | 0.416 | Verified (reported) |
-| NFR-03 | p95 Q&A ≤ 3 s | 2.74 s (AC, one run); 7.24 s (battery); cold 5.9–10.5 s | Not established — depends on power state; more runs needed |
-| NFR-04 | Search p95 reported | 53 ms | Verified (reported) |
-| NFR-06 | 100% displayed citations valid | 1.00 citation validity in all runs | Verified on eval set |
-| NFR-07 | Abstention reported | recall 1.00, precision 0.50–0.59, false answers 0/10 | Verified (reported) |
+| NFR | Target | Measured (M3 baseline) | Measured (M7, `hybrid_rerank`) | Status |
+|-----|--------|------------------------|--------------------------------|--------|
+| NFR-01 | Recall@5 ≥ 0.80 | 0.700 | 0.875 | **Met on this set** (mode chosen on the same set; labels unreviewed) |
+| NFR-02 | MRR reported | 0.416 | 0.701 | Verified (reported) |
+| NFR-03 | p95 Q&A ≤ 3 s | 2.74 s (AC, one run); 7.24 s (battery); cold 5.9–10.5 s | 4.50 s and 4.43 s warm (AC, 2 runs); cold 8.1–12.0 s | **Not met** |
+| NFR-04 | Search p95 reported | 53 ms | 2,021 ms (top_k 10) | Verified (reported) |
+| NFR-06 | 100% displayed citations valid | 1.00 citation validity in all runs | 1.00 (2 runs) | Verified on eval set |
+| NFR-07 | Abstention reported | recall 1.00, precision 0.50–0.59, false answers 0/10 | recall 0.90, precision 0.64–0.82, false answers 1/10 (q050) | Verified (reported); regression on q050 open |
