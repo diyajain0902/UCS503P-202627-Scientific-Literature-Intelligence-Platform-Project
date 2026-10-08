@@ -33,7 +33,7 @@ explicit authorization (`CLAUDE.md` §6).
 | C6 | Docker base images are pinned by tag, not digest (`python:3.12-slim`, `node:24-alpine`, `nginx:1.27-alpine`). | Low | Open. Rebuilds can pick up patch-level changes. |
 | C7 | Hugging Face models are pinned by name, not revision (also security S5). | Medium | Open. A silent upstream model update would change embeddings and rankings. |
 | C8 | `retrieval-eval` depends on live arXiv. Its first three runs in M3 failed at `build-corpus`, probably from throttling. | Medium | Open (known flake). Failures now emit `::error::` annotations. |
-| C9 | CI results for the M6 merge and for M7 were **not observed**: no `gh` CLI, and the unauthenticated GitHub API was rate-limited. | — | **Unverified.** The team should check the Actions tab for this branch. |
+| C9 | CI for M7 was checked through the GitHub API: run 37845151567 (`ec8490d`) passed all 6 jobs. The M6 merge's CI was not checked. | — | M7 verified |
 | C10 | The new `e2e` tests need a running stack and Ollama, so they are excluded from CI. | — | By design. Run them manually (`docs/operations.md`). |
 
 ## 3. Reproducibility evidence
@@ -61,5 +61,4 @@ prompt version. Q&A answers and analyses persist the same retrieval block.
 ## 4. Verdict
 
 CI covers lint, types, tests, build, a meaningful retrieval gate, and dependency scanning. The remaining
-reproducibility gaps are model-revision pinning (C7) and image/action digests (C5, C6). CI status on GitHub for
-this branch has to be checked by the team (C9).
+reproducibility gaps are model-revision pinning (C7) and image/action digests (C5, C6).

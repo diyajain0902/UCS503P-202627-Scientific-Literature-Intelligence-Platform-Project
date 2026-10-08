@@ -37,7 +37,7 @@ Nothing is sent to a hosted LLM.
 | Q&A latency (NFR-03 p95 ≤ 3 s) | **Not met:** 4.4–4.5 s warm | Retrieval takes ~1.2 s with the reranker; generation ~1.9 s (p50) |
 | Citation integrity (NFR-06) | 1.00 valid in every run | Server-side resolution; tests |
 | Abstention (NFR-07) | 9/10 unanswerable abstained; 1 false answer (q050) | `docs/evaluation.md` §7 |
-| Availability (NFR-05 ≥ 99%) | One 60-minute pilot window measured | Progress log (M7); not a semester-scale pilot |
+| Availability (NFR-05 ≥ 99%) | One 25.5-minute window: 52/52 probes up | Progress log (M7); not a semester-scale pilot |
 | Generation | Local Ollama `qwen2.5:3b` instead of the proposal's Gemini | ADR-0001. Whether to amend the proposal is still open |
 | Deployment | Local Docker Compose only | Public deployment needs authorization and the open security items fixed |
 
