@@ -92,3 +92,19 @@ textarea { font: inherit; width: 100%; padding: 0.5rem 0.65rem; border-radius: 6
 .evidence { margin-top: 0.75rem; }
 .evidence-selected .passage { border-left-color: var(--ok); }
 details summary { cursor: pointer; color: var(--text-muted); }
+
+.tabs { flex-wrap: wrap; }
+button.secondary { background: var(--surface); color: var(--text); border-color: var(--border); font-weight: 500; }
+button.danger { background: var(--error); border-color: var(--error); color: #fff; }
+.link-button { background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; text-align: left; cursor: pointer; }
+.details { margin-top: 0.5rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; }
+.details h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+.abstract { font-size: 0.9rem; }
+input.narrow { flex: 0 0 5.5rem; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 0 0 0.75rem; }
+.tile { border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem; }
+.tile dt { font-size: 0.8rem; color: var(--text-muted); }
+.tile dd { margin: 0; font-size: 1.4rem; font-weight: 700; }
+.settings-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+.settings-table th, .settings-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.settings-table th { color: var(--text-muted); font-weight: 500; width: 40%; }

@@ -13,6 +13,7 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "pymupdf>=1.25",
+    "python-multipart>=0.0.20",
     "sentence-transformers>=3.3",
     "sqlalchemy>=2.0.36",
     "torch>=2.5",

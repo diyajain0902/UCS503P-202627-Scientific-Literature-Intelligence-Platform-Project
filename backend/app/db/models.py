@@ -59,6 +59,7 @@ TERMINAL_JOB_STATES = frozenset({JobState.READY, JobState.FAILED})
 
 class JobKind(enum.StrEnum):
     ARXIV_IMPORT = "arxiv_import"
+    PDF_UPLOAD = "pdf_upload"
 
 
 class AnswerStatus(enum.StrEnum):
@@ -191,6 +192,9 @@ class IngestionJob(Base):
     kind: Mapped[str] = mapped_column(String(32))
     state: Mapped[str] = mapped_column(String(16), default=JobState.QUEUED.value, index=True)
     source_ref: Mapped[str] = mapped_column(String(64))
+    """arXiv identifier for imports; SHA-256 of the file for uploads."""
+    display_name: Mapped[str | None] = mapped_column(String(300))
+    """Human-readable label (upload title or file name); never used as a path."""
     paper_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("papers.id", ondelete="CASCADE"), index=True
     )

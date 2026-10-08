@@ -31,6 +31,7 @@ export interface Job {
   kind: string
   state: JobState
   source_ref: string
+  display_name: string | null
   paper_id: string | null
   error: string | null
   attempts: number
@@ -94,12 +95,22 @@ export class ApiError extends Error {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 
-async function request<T>(path: string, init?: RequestInit, acceptStatuses: number[] = []): Promise<T> {
+async function requestNoContent(path: string, init: RequestInit): Promise<void> {
+  await request<unknown>(path, init, [], false)
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  acceptStatuses: number[] = [],
+  parseBody = true,
+): Promise<T> {
   let response: Response
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...init,
-      headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
+      // JSON bodies are strings; FormData sets its own multipart boundary header.
+      headers: typeof init?.body === 'string' ? { 'Content-Type': 'application/json' } : undefined,
     })
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error
@@ -119,7 +130,7 @@ async function request<T>(path: string, init?: RequestInit, acceptStatuses: numb
     }
     throw new ApiError(response.status, code, message)
   }
-  return (await response.json()) as T
+  return (parseBody ? await response.json() : undefined) as T
 }
 
 export const api = {
@@ -137,6 +148,78 @@ export const api = {
     }),
   ask: (question: string) =>
     request<QAAnswer>('/qa', { method: 'POST', body: JSON.stringify({ question }) }),
+  answer: (id: string) => request<QAAnswer>(`/qa/${encodeURIComponent(id)}`),
+  history: (limit = 50, offset = 0) => request<Page<HistoryItem>>(`/qa?limit=${limit}&offset=${offset}`),
+  corpus: (filters: PaperFilters, limit = 20, offset = 0, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, String(value))
+    return request<Page<Paper>>(`/papers?${params.toString()}`, { signal })
+  },
+  paper: (id: string) => request<Paper>(`/papers/${encodeURIComponent(id)}`),
+  deletePaper: (id: string) => requestNoContent(`/papers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  categories: () => request<string[]>('/categories'),
+  upload: (file: File, title: string) => {
+    const form = new FormData()
+    form.append('file', file)
+    if (title.trim()) form.append('title', title.trim())
+    return request<Job>('/papers/upload', { method: 'POST', body: form })
+  },
+  jobs: (limit = 20) => request<Job[]>(`/jobs?limit=${limit}`),
+  retryJob: (id: string) => request<Job>(`/jobs/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
+  searchArxiv: (query: string) =>
+    request<ArxivResult[]>(`/arxiv/search?${new URLSearchParams({ q: query, max_results: '10' })}`),
+  stats: () => request<Stats>('/stats'),
+  settings: () => request<SettingsInfo>('/settings'),
+}
+
+export interface PaperFilters {
+  q?: string
+  source?: '' | 'arxiv' | 'upload'
+  category?: string
+  year?: string
+}
+
+export interface HistoryItem {
+  id: string
+  question: string
+  status: string
+  claim_count: number
+  latency_ms: number
+  created_at: string
+}
+
+export interface ArxivResult {
+  arxiv_id: string
+  version: number
+  title: string
+  authors: string[]
+  abstract: string
+  categories: string[]
+  published_at: string | null
+  stored_version: number | null
+}
+
+export interface Stats {
+  papers: number
+  papers_by_source: Record<string, number>
+  chunks: number
+  pages: number
+  jobs_by_state: Record<string, number>
+  answers_by_status: Record<string, number>
+}
+
+export interface SettingsInfo {
+  embedding_model: string
+  embedding_dimension: number
+  chunk_window_tokens: number
+  chunk_overlap_tokens: number
+  generation_model: string
+  generation_options: Record<string, unknown>
+  qa_default_top_k: number
+  qa_min_score: number
+  search_max_top_k: number
+  max_pdf_megabytes: number
+  max_pdf_pages: number
 }
 
 export interface QACitation {

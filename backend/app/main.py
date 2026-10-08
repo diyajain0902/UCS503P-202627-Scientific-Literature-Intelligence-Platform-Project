@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api.v1 import health, qa, routes
+from app.api.v1 import corpus, health, qa, routes
 from app.container import Container, build_container
 from app.core.config import Settings, get_settings
 from app.core.errors import AppError, register_error_handlers
@@ -75,6 +75,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(routes.router, prefix="/api/v1")
     app.include_router(qa.router, prefix="/api/v1")
+    app.include_router(corpus.router, prefix="/api/v1")
     return app
 
 

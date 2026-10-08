@@ -6,6 +6,7 @@ export const job = (overrides: Partial<Job> = {}): Job => ({
   kind: 'arxiv_import',
   state: 'queued',
   source_ref: '2101.00001',
+  display_name: null,
   paper_id: null,
   error: null,
   attempts: 0,

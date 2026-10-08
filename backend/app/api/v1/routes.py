@@ -1,7 +1,7 @@
 """Corpus, ingestion, and search endpoints."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
@@ -16,6 +16,7 @@ from app.api.v1.schemas import (
 )
 from app.container import Container
 from app.core.errors import InvalidInputError
+from app.services.corpus import PaperFilter
 
 ERRORS: dict[int | str, dict[str, object]] = {
     code: {"model": ErrorResponse} for code in (404, 422, 502, 503)
@@ -60,8 +61,13 @@ def list_papers(
     container: ContainerDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0, le=100_000)] = 0,
+    source: Annotated[Literal["arxiv", "upload"] | None, Query()] = None,
+    category: Annotated[str | None, Query(max_length=32)] = None,
+    year: Annotated[int | None, Query(ge=1900, le=2100)] = None,
+    q: Annotated[str | None, Query(max_length=200, description="title contains")] = None,
 ) -> Page[PaperOut]:
-    summaries, total = container.corpus.list_papers(limit, offset)
+    filters = PaperFilter(source=source, category=category, year=year, title=q)
+    summaries, total = container.corpus.list_papers(limit, offset, filters)
     return Page[PaperOut](
         items=[PaperOut.of(s) for s in summaries], total=total, limit=limit, offset=offset
     )

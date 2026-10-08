@@ -3,13 +3,13 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-08 (Milestone 3).
+Last updated: 2026-10-08 (Milestone 4).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|
-| FR-01 | M1, M4 | `backend/app/ingestion/arxiv.py` | `test_arxiv.py` (ID parsing, Atom parsing, SSRF allow-list, redirects, size cap, rate limit, error mapping); `test_arxiv_live.py` (live, manual) | — | Partial — import by ID verified (incl. live arXiv 2026-10-08); query search UI is M4 |
+| FR-01 | M1, M4 | `backend/app/ingestion/arxiv.py` (`search`, `build_search_query`), `GET /api/v1/arxiv/search`, `frontend/src/features/ingest/ArxivSearch.tsx` | `test_arxiv.py` (feed parsing, query sanitisation, capped results); `test_corpus_management.py::test_arxiv_search_marks_imported_papers`; `m4.test.tsx` | — | Verified (mocked arXiv in tests; live search checked manually, see progress log) |
 | FR-02 | M1 | `backend/app/services/ingestion.py`, `backend/app/db/` | `test_ingestion_pipeline.py` (ready path, idempotent re-import, new version replaces, retry) — CI integration job; real end-to-end import of 1706.03762v7 on local PostgreSQL (progress log) | — | Verified (CI + local real-component run) |
-| FR-03 | M4 | `backend/app/ingestion/upload.py` | — | — | Planned |
+| FR-03 | M4 | `backend/app/ingestion/pdf.py::inspect_pdf`, `IngestionService.request_upload`, `POST /api/v1/papers/upload`, `frontend/src/features/ingest/UploadForm.tsx`, `frontend/nginx.conf` | `test_corpus_management.py` (ingest + search, duplicate 409, non-PDF/corrupt/too many pages/too large/encrypted 422, file name never a path, scanned PDF fails and file discarded); `m4.test.tsx` | NFR-10, NFR-12 | Verified |
 | FR-04 | M1 | `backend/app/ingestion/pdf.py` | `test_pdf.py` (offsets, page mapping, determinism, non-PDF/corrupt/encrypted/too-many-pages/no-text rejection) | — | Verified |
 | FR-05 | M1 | `backend/app/ingestion/chunking.py` | `test_chunking.py`; `test_real_model.py::test_real_tokenizer_chunks_fit_model_input` | NFR-08 | Verified (ADR-0003: 256/38) |
 | FR-06 | M1 | `backend/app/retrieval/embedding.py` | `test_embedding.py`; `test_real_model.py` (384-dim, normalized, max_seq_length 256); DB rejects ≠384 dims | — | Verified |
@@ -22,14 +22,14 @@ Last updated: 2026-10-08 (Milestone 3).
 | FR-13 | M5 | `backend/app/services/summaries.py` | — | — | Planned |
 | FR-14 | M5 | `backend/app/services/extraction.py` | — | — | Planned |
 | FR-15 | M5 | `backend/app/services/comparison.py` | — | — | Planned |
-| FR-16 | M4 | `backend/app/services/corpus.py`, `backend/app/api/v1/routes.py`, `frontend/src/features/corpus/` | `test_search_integration.py` (list papers); `PaperList.test.tsx` | — | Partial — list + detail endpoints and list UI; filters/delete are M4 |
-| FR-17 | M1, M4 | `backend/app/services/ingestion.py`, `backend/app/services/jobs.py`, `frontend/src/features/ingest/` | `test_ingestion_pipeline.py` (states, actionable errors, crash rollback, interrupted jobs, single in-flight job); `ImportForm.test.tsx` | — | Partial — states/errors/retry-by-reimport verified; retry button UI is M4 |
-| FR-18 | M2, M4 | `queries`, `answers`, `answer_evidence`, `answer_citations` (migration 0002); `GET /api/v1/qa`, `GET /api/v1/qa/{id}` | `test_qa_integration.py` (persisted provenance, history order, errors recorded, survives paper deletion) | NFR-09 | Partial — persistence + API verified; history UI is M4 |
+| FR-16 | M4 | `backend/app/services/corpus.py` (`PaperFilter`, `delete_paper`, `categories`), `GET/DELETE /api/v1/papers`, `frontend/src/features/corpus/CorpusView.tsx` | `test_corpus_management.py` (filters incl. LIKE-escape, delete removes chunks + file, history kept); `m4.test.tsx` (filters sent, delete needs confirmation) | — | Verified |
+| FR-17 | M1, M4 | `backend/app/services/ingestion.py` (`retry`), `GET /api/v1/jobs`, `POST /api/v1/jobs/{id}/retry`, `frontend/src/features/ingest/{JobStatus,RecentJobs}.tsx` | `test_ingestion_pipeline.py`; `test_corpus_management.py::test_failed_job_can_be_retried`; `m4.test.tsx` | — | Verified |
+| FR-18 | M2, M4 | Q&A tables (0002), `GET /api/v1/qa[/{id}]`, `frontend/src/features/history/HistoryView.tsx` | `test_qa_integration.py`; `m4.test.tsx` (open saved answer) | NFR-09 | Verified |
 | FR-19 | M3 | `backend/app/evaluation/` (`dataset.py`, `metrics.py`, `corpus.py`, `runner.py`, `__main__.py`), `eval/corpus.json`, `eval/qa_v1.json`, `eval/runs/` | `test_eval_metrics.py` (hand-computed); `test_eval_integration.py` (corpus verify, label check, runs, records); baseline runs | NFR-01, NFR-02 | Verified (tooling); labels AI-written, unreviewed (ADR-0007) |
 | FR-20 | M3, M5 | `backend/app/evaluation/runner.py::run_qa` | `test_eval_integration.py::test_qa_run_and_record`; baseline Q&A runs | NFR-03, NFR-06, NFR-07 | Partial — citation validity, cited-relevant, abstention, latency measured; semantic groundedness is M5 |
 | FR-21 | M3 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI job builds corpus from arXiv and gates Recall@5 ≥ 0.675 | NFR-01 | Implemented; first CI result recorded in progress log |
-| FR-22 | M4 | `frontend/src/features/dashboard/` | — | — | Planned |
-| FR-23 | M4 | `frontend/src/features/settings/` | — | — | Planned |
+| FR-22 | M4 | `GET /api/v1/stats`, `frontend/src/features/dashboard/Dashboard.tsx` | `test_corpus_management.py::test_stats_and_settings`; `m4.test.tsx` | — | Verified |
+| FR-23 | M4 | `GET /api/v1/settings`, `frontend/src/features/settings/SettingsView.tsx` | `test_corpus_management.py::test_stats_and_settings` (no DB URL or password exposed) | — | Verified |
 | FR-24 | M6 | `backend/app/retrieval/` | — | NFR-01 | Planned |
 | FR-25 | M6 | `backend/app/retrieval/` | — | NFR-01, NFR-03 | Planned |
 | FR-26 | — | — | — | — | Deferred (scanned PDFs rejected per AC-03.3) |
