@@ -1,6 +1,6 @@
 # ADR-0004: Python 3.12 via uv; Docker required for PostgreSQL + pgvector
 
-- Status: Accepted for Python; Docker installation pending (team action). DB tests run in CI meanwhile.
+- Status: Accepted. Docker Desktop installed and verified 2026-10-08.
 - Date: 2026-10-08
 
 ## Context

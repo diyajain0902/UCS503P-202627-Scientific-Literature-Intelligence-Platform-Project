@@ -91,4 +91,6 @@ cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 - `/api/v1/ready` returns 503 with `database: unreachable or not migrated`: start `db` and run `alembic upgrade head`.
 - Search returns 503 "pgvector X is installed; 0.8.0 or newer is required": use the compose `db` service
   (pgvector 0.8.0) or upgrade the extension.
+- Database connections take ~15 s each on Windows: use `127.0.0.1`, not `localhost`, in `SLIP_DATABASE_URL`.
+  `localhost` resolves to IPv6 `::1` first, and Docker publishes PostgreSQL on `127.0.0.1` only.
 - An import fails with "Interrupted by a server restart": the backend restarted mid-job; import the paper again.

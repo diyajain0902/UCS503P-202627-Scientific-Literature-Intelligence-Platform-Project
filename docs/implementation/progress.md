@@ -2,6 +2,34 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 1 closure: Docker verification on the reference machine
+
+**Setup by the team:** WSL 3.0.1 (manual MSI after `wsl --install` returned HTTP 403), VirtualMachinePlatform
+feature enabled, Docker Desktop 29.8.2 (per-user install). Root `.env` created locally with a random password
+(git-ignored).
+
+**`docker compose up -d --build`:** all three services up; `db` and `backend` healthy. First build >10 min (CPU
+PyTorch layer); later starts reuse the cache.
+
+**End-to-end through the frontend's nginx proxy (`http://localhost:8080/api/v1`):**
+- `/ready` → ready: `pgvector 0.8.0, schema revision 0001`; MiniLM loaded (384-dim); Ollama `qwen2.5:3b`
+  reachable from the container via `host.docker.internal`.
+- Import `1706.03762v7` → `ready` in 5 s.
+- Search "why use multi-head attention instead of a single attention function" (top_k 3) → 39.4 ms; top hit is
+  the multi-head attention passage, pp. 4–5 (score 0.552). Single manual query, not an evaluation.
+- Browser UI at `http://localhost:8080`: status bar green for all three dependencies; query "positional encoding
+  sine cosine" → top passage is the sinusoidal positional-encoding text, p. 6.
+
+**Tests against the Compose database (pgvector 0.8.0):** `pytest -m "integration or model"` → **32 passed**
+(154 s); unit suite → **85 passed**; ruff and mypy clean.
+
+**Defect found and fixed:** on this Windows machine `localhost` resolves to `::1` first; Docker publishes
+PostgreSQL on `127.0.0.1` only, so every new DB connection took ~15–17 s (measured: `127.0.0.1` 2.1 s vs
+`localhost` 17.1 s including interpreter start-up). The test suite appeared hung. Defaults in `config.py`,
+`.env.example`, and CI now use `127.0.0.1`; README troubleshooting updated.
+
+**M1 open items now closed:** `docker compose up` (IR-03) and search on pgvector ≥ 0.8.0 locally.
+
 ## 2026-10-08 — Milestone 1 addendum: local database verification and pgvector defect
 
 **Docker:** not installed. Installing Docker Desktop requires enabling WSL2/Hyper-V (Windows system features,

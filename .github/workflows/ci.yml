@@ -40,7 +40,7 @@ jobs:
           --health-cmd "pg_isready -U slip -d slip_test"
           --health-interval 5s --health-timeout 3s --health-retries 20
     env:
-      SLIP_TEST_DATABASE_URL: postgresql+psycopg://slip:slip@localhost:5432/slip_test
+      SLIP_TEST_DATABASE_URL: postgresql+psycopg://slip:slip@127.0.0.1:5432/slip_test
     defaults:
       run:
         working-directory: backend
