@@ -1,0 +1,53 @@
+{
+  "kind": "profile-retrieval",
+  "started_at": "2026-10-08T21:45:06.516853+00:00",
+  "dataset": {
+    "name": "nlp-core-qa",
+    "version": "1",
+    "path": "eval/qa_v1.json",
+    "sha256": "b0fc0f6dd4f6215fdbb8cfad5884e925de47ee97d2958224e20e6e7505142bbd",
+    "items": 50,
+    "answerable": 40,
+    "unanswerable": 10,
+    "labelers": [
+      "ai-assistant"
+    ],
+    "human_reviewed_items": 0
+  },
+  "corpus_manifest": {
+    "path": "eval/corpus.json",
+    "sha256": "6f5c0efa067f8a1439e6aae2d73786dcd4c834e62f0066d8df8d626759d02775"
+  },
+  "git": {
+    "commit": "03fb705f6a5c1bda0c1abd4398e2951d7e53a143",
+    "dirty": false,
+    "untracked_files": 1
+  },
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "python": "3.12.13",
+    "power_source": "ac"
+  },
+  "config": {
+    "top_k": 6,
+    "candidate_k": 24,
+    "rrf_k": 60
+  },
+  "metrics": {
+    "embed_ms_p50": 17.2,
+    "embed_ms_p95": 30.3,
+    "dense_ms_p50": 28.6,
+    "dense_ms_p95": 35.9,
+    "bm25_ms_p50": 35.5,
+    "bm25_ms_p95": 66.0,
+    "hybrid_ms_p50": 61.3,
+    "hybrid_ms_p95": 84.9,
+    "rerank_ms_p50": 895.0,
+    "rerank_ms_p95": 984.5,
+    "queries": 50,
+    "adjacent_chunk_pairs_in_top_k": 47,
+    "queries_x_top_k": 300,
+    "exact_duplicate_texts_in_top_k": 0
+  }
+}
