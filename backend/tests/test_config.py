@@ -6,7 +6,7 @@ from app.core.config import Settings
 
 def test_defaults_target_local_ollama_and_minilm() -> None:
     settings = Settings()
-    assert settings.ollama_base_url.host == "localhost"
+    assert settings.ollama_base_url.host == "127.0.0.1"
     assert settings.embedding_model == "sentence-transformers/all-MiniLM-L6-v2"
     assert settings.embedding_dimension == 384
 

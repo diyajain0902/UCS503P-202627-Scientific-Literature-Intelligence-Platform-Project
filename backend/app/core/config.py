@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
     log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR)$")
 
-    database_url: str = "postgresql+psycopg://slip:slip@localhost:5432/slip"
+    database_url: str = "postgresql+psycopg://slip:slip@127.0.0.1:5432/slip"
     storage_dir: Path = Path("../data/storage")
 
-    ollama_base_url: AnyHttpUrl = AnyHttpUrl("http://localhost:11434")
+    ollama_base_url: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:11434")
     ollama_model: str = Field(default="qwen2.5:3b", min_length=1)
     ollama_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
 
