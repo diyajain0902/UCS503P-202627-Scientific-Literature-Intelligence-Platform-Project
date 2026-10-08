@@ -66,6 +66,7 @@ export interface SearchHit {
   rank: number
   chunk_id: string
   score: number
+  rank_score: number | null
   text: string
   page_start: number
   page_end: number

@@ -169,8 +169,7 @@ def run_retrieval(
     return {
         "config": {
             "top_k": top_k,
-            "search_mode": mode,
-            "embedding_model": search.embedding_model,
+            **search.describe(mode),
             "chunker_versions": _chunker_versions(sessions),
         },
         "metrics": metrics,

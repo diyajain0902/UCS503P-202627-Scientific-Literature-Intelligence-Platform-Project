@@ -8,6 +8,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Computed,
     DateTime,
     Float,
     ForeignKey,
@@ -20,7 +21,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 # Fixed by the schema (ADR-0003, FR-06). Changing it requires a migration.
@@ -152,11 +153,7 @@ class Chunk(Base):
             postgresql_using="hnsw",
             postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
-        Index(
-            "idx_chunks_fts",
-            text("to_tsvector('english', text)"),
-            postgresql_using="gin",
-        ),
+        Index("ix_chunks_text_tsv", "text_tsv", postgresql_using="gin"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -171,6 +168,10 @@ class Chunk(Base):
     token_count: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION))
+    # Stored full-text vector for BM25 search (FR-24, migration 0006); never loaded with the row.
+    text_tsv: Mapped[str] = mapped_column(
+        TSVECTOR, Computed("to_tsvector('english'::regconfig, text)", persisted=True), deferred=True
+    )
 
     document: Mapped[Document] = relationship(back_populates="chunks")
 

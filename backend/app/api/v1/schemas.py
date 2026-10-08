@@ -101,6 +101,9 @@ class SearchHitOut(BaseModel):
     rank: int
     chunk_id: uuid.UUID
     score: float
+    """Cosine similarity of query and chunk (all search modes)."""
+    rank_score: float | None
+    """Ordering score of the search mode (BM25, RRF, or cross-encoder); null for dense."""
     text: str
     page_start: int
     page_end: int
@@ -128,6 +131,7 @@ class SearchResponse(BaseModel):
                     rank=rank,
                     chunk_id=hit.chunk.id,
                     score=round(hit.score, 6),
+                    rank_score=None if hit.rank_score is None else round(hit.rank_score, 6),
                     text=hit.chunk.text,
                     page_start=hit.chunk.page_start,
                     page_end=hit.chunk.page_end,

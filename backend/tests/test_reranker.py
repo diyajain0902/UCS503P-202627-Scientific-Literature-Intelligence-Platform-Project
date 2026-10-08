@@ -3,6 +3,9 @@
 import uuid
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from app.core.errors import DependencyUnavailableError
 from app.db.models import Chunk, Paper
 from app.retrieval.rerank import CrossEncoderReranker
 from app.retrieval.search import ChunkHit
@@ -52,12 +55,35 @@ def test_reranker_scores_and_resorts_hits(mock_ce_cls: MagicMock) -> None:
     mock_ce_cls.return_value = mock_model
 
     reranker = CrossEncoderReranker(model_name="mock-cross-encoder")
-    hit1 = make_hit("Low relevance passage")
-    hit2 = make_hit("High relevance passage")
+
+    hit1 = make_hit("Low relevance passage", score=0.62)
+    hit2 = make_hit("High relevance passage", score=0.41)
 
     reranked = reranker.rerank("attention mechanism", [hit1, hit2], top_k=2)
     assert len(reranked) == 2
     assert reranked[0].chunk.text == "High relevance passage"
-    assert reranked[0].score == 0.9
+    assert reranked[0].rank_score == 0.9
     assert reranked[1].chunk.text == "Low relevance passage"
-    assert reranked[1].score == 0.1
+    assert reranked[1].rank_score == 0.1
+
+
+@patch("app.retrieval.rerank.CrossEncoder")
+def test_reranker_keeps_cosine_score_for_evidence_thresholds(mock_ce_cls: MagicMock) -> None:
+    # Regression (M6): cross-encoder logits replaced ChunkHit.score, so qa_min_score (calibrated on
+    # cosine similarity) was compared with logits. Logits such as -7.5 must not touch the score.
+    mock_model = MagicMock()
+    mock_model.predict.return_value = [-7.5, 4.2]
+    mock_ce_cls.return_value = mock_model
+    hits = [make_hit("a", score=0.55), make_hit("b", score=0.33)]
+
+    reranked = CrossEncoderReranker(model_name="mock").rerank("q", hits, top_k=2)
+
+    assert [h.score for h in reranked] == [0.33, 0.55]
+    assert [h.rank_score for h in reranked] == [4.2, -7.5]
+
+
+@patch("app.retrieval.rerank.CrossEncoder", side_effect=OSError("offline"))
+def test_reranker_load_failure_is_a_dependency_error(_: MagicMock) -> None:
+    reranker = CrossEncoderReranker(model_name="missing")
+    with pytest.raises(DependencyUnavailableError, match="could not be loaded"):
+        reranker.rerank("q", [make_hit("a"), make_hit("b")], top_k=2)
