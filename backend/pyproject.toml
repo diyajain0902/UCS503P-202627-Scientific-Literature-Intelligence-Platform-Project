@@ -66,6 +66,7 @@ markers = [
     "model: loads the real embedding model (downloads it on first use)",
     "network: calls the live arXiv API",
     "ollama: calls the real local Ollama model (not run in CI)",
+    "e2e: HTTP tests against a running stack (SLIP_E2E_BASE_URL; not run in CI)",
 ]
 
 [tool.uv]
