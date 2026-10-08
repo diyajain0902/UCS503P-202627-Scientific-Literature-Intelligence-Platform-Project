@@ -16,6 +16,7 @@ from app.retrieval.embedding import (
     SentenceTransformerEmbedder,
     required_input_tokens,
 )
+from app.retrieval.rerank import CrossEncoderReranker
 from app.services.analysis import AnalysisService
 from app.services.corpus import CorpusService
 from app.services.ingestion import IngestionService
@@ -82,7 +83,20 @@ def build_container(settings: Settings) -> Container:
         max_pdf_bytes=settings.max_pdf_bytes,
         max_pdf_pages=settings.max_pdf_pages,
     )
-    search = SearchService(session_factory, embedder, settings.search_max_top_k)
+    reranker = (
+        CrossEncoderReranker(model_name=settings.reranker_model)
+        if settings.reranker_enabled
+        else None
+    )
+    search = SearchService(
+        session_factory=session_factory,
+        embedder=embedder,
+        max_top_k=settings.search_max_top_k,
+        search_mode=settings.search_mode,
+        rrf_k=settings.hybrid_rrf_k,
+        candidate_multiplier=settings.hybrid_candidate_multiplier,
+        reranker=reranker,
+    )
     ollama = OllamaProvider(
         base_url=str(settings.ollama_base_url),
         model=settings.ollama_model,

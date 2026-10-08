@@ -87,6 +87,7 @@ class SearchRequest(BaseModel):
     query: str = Field(min_length=1)
     top_k: int | None = Field(default=None, ge=1)
     paper_ids: list[uuid.UUID] | None = Field(default=None, max_length=100)
+    search_mode: str | None = Field(default=None, pattern="^(dense|bm25|hybrid|hybrid_rerank)$")
 
 
 class SearchPaperRef(BaseModel):

@@ -30,8 +30,8 @@ Last updated: 2026-10-08 (Milestone 5).
 | FR-21 | M3 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI job builds corpus from arXiv and gates Recall@5 ≥ 0.675 | NFR-01 | Implemented; first CI result recorded in progress log |
 | FR-22 | M4 | `GET /api/v1/stats`, `frontend/src/features/dashboard/Dashboard.tsx` | `test_corpus_management.py::test_stats_and_settings`; `m4.test.tsx` | — | Verified |
 | FR-23 | M4 | `GET /api/v1/settings`, `frontend/src/features/settings/SettingsView.tsx` | `test_corpus_management.py::test_stats_and_settings` (no DB URL or password exposed) | — | Verified |
-| FR-24 | M6 | `backend/app/retrieval/` | — | NFR-01 | Planned |
-| FR-25 | M6 | `backend/app/retrieval/` | — | NFR-01, NFR-03 | Planned |
+| FR-24 | M6 | `backend/app/retrieval/search.py` (`search_hybrid_chunks`, `search_bm25_chunks`), `Migration 0005` | `test_search_hybrid.py` (RRF rank fusion, mode routing); eval runs `eval/runs/` | NFR-01 | Verified (Recall@5 = 0.725 / 0.875 with reranker) |
+| FR-25 | M6 | `backend/app/retrieval/rerank.py` (`CrossEncoderReranker`) | `test_reranker.py`; eval runs `eval/runs/` | NFR-01, NFR-03 | Verified (MRR = 0.662, Recall@5 = 0.875) |
 | FR-26 | — | — | — | — | Deferred (scanned PDFs rejected per AC-03.3) |
 | IR-01 | M0+ | `backend/app/main.py`, `backend/app/api/v1/`, `backend/app/core/errors.py` | `test_health.py`; `test_api_validation.py` (error envelope, pagination bounds); 404 envelope in `test_search_integration.py` | — | Verified |
 | IR-02 | M0 | `backend/app/core/config.py`, `.env.example`, `.gitignore` | `tests/test_config.py` (4 tests) | — | Verified |

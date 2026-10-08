@@ -1,4 +1,4 @@
-"""Semantic search use case (FR-08)."""
+"""Hybrid and dense semantic search service (FR-08, FR-24, FR-25)."""
 
 import time
 import uuid
@@ -8,11 +8,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.errors import DependencyUnavailableError, InvalidInputError
 from app.retrieval.embedding import Embedder
+from app.retrieval.rerank import RerankerProtocol
 from app.retrieval.search import (
     ChunkHit,
     installed_pgvector_version,
     pgvector_version_problem,
+    search_bm25_chunks,
     search_chunks,
+    search_hybrid_chunks,
 )
 
 
@@ -25,32 +28,94 @@ class SearchResult:
 
 class SearchService:
     def __init__(
-        self, session_factory: sessionmaker[Session], embedder: Embedder, max_top_k: int
+        self,
+        session_factory: sessionmaker[Session],
+        embedder: Embedder,
+        max_top_k: int,
+        search_mode: str = "hybrid_rerank",
+        rrf_k: int = 60,
+        candidate_multiplier: int = 4,
+        reranker: RerankerProtocol | None = None,
     ) -> None:
         self._sessions = session_factory
         self._embedder = embedder
         self._max_top_k = max_top_k
+        self._search_mode = search_mode
+        self._rrf_k = rrf_k
+        self._candidate_multiplier = candidate_multiplier
+        self._reranker = reranker
         self._pgvector_checked = False
 
     @property
     def embedding_model(self) -> str:
         return self._embedder.model_name
 
+    @property
+    def search_mode(self) -> str:
+        return self._search_mode
+
     def search(
-        self, query: str, top_k: int, paper_ids: list[uuid.UUID] | None = None
+        self,
+        query: str,
+        top_k: int,
+        paper_ids: list[uuid.UUID] | None = None,
+        search_mode: str | None = None,
     ) -> SearchResult:
         cleaned = " ".join(query.split())
         if not cleaned:
             raise InvalidInputError("query must contain text")
         if not 1 <= top_k <= self._max_top_k:
             raise InvalidInputError(f"top_k must be between 1 and {self._max_top_k}")
+
+        mode = search_mode or self._search_mode
+        if mode not in {"dense", "bm25", "hybrid", "hybrid_rerank"}:
+            raise InvalidInputError(
+                f"invalid search_mode '{mode}'; expected 'dense', 'bm25', 'hybrid', or "
+                "'hybrid_rerank'"
+            )
+
         started = time.perf_counter()
-        vector = self._embedder.embed([cleaned])[0]
+
         with self._sessions() as session:
             self._require_supported_pgvector(session)
-            # Closing the session ends the read-only transaction (and its SET LOCAL settings)
-            # without expiring the loaded rows, which a rollback() would do.
-            hits = search_chunks(session, vector, top_k, paper_ids)
+
+            if mode == "dense":
+                vector = self._embedder.embed([cleaned])[0]
+                hits = search_chunks(session, vector, top_k, paper_ids)
+
+            elif mode == "bm25":
+                hits = search_bm25_chunks(session, cleaned, top_k, paper_ids)
+
+            elif mode == "hybrid":
+                vector = self._embedder.embed([cleaned])[0]
+                candidate_k = max(top_k * self._candidate_multiplier, 20)
+                hits = search_hybrid_chunks(
+                    session=session,
+                    query_vector=vector,
+                    query_text=cleaned,
+                    top_k=top_k,
+                    paper_ids=paper_ids,
+                    candidate_k=candidate_k,
+                    rrf_k=self._rrf_k,
+                )
+
+            elif mode == "hybrid_rerank":
+                vector = self._embedder.embed([cleaned])[0]
+                candidate_k = max(top_k * self._candidate_multiplier, 20)
+                candidates = search_hybrid_chunks(
+                    session=session,
+                    query_vector=vector,
+                    query_text=cleaned,
+                    top_k=candidate_k,
+                    paper_ids=paper_ids,
+                    candidate_k=candidate_k,
+                    rrf_k=self._rrf_k,
+                )
+                if self._reranker is not None and candidates:
+                    hits = self._reranker.rerank(cleaned, candidates, top_k)
+                else:
+                    hits = candidates[:top_k]
+
         return SearchResult(
             hits=hits,
             embedding_model=self._embedder.model_name,

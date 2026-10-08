@@ -49,6 +49,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runs-dir", type=Path, default=EVAL_DIR / "runs")
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument(
+        "--search-mode",
+        choices=["dense", "bm25", "hybrid", "hybrid_rerank"],
+        default=None,
+        help="search strategy mode for retrieval evaluation",
+    )
+    parser.add_argument(
         "--min-recall-at-5",
         type=float,
         default=None,
@@ -104,7 +110,13 @@ def main(argv: list[str] | None = None) -> int:
         record = base_record(args.command, dataset, args.dataset.resolve(), args.manifest.resolve())
         if args.command == "retrieval":
             record.update(
-                run_retrieval(dataset, container.search, container.session_factory, args.top_k)
+                run_retrieval(
+                    dataset,
+                    container.search,
+                    container.session_factory,
+                    args.top_k,
+                    args.search_mode,
+                )
             )
         else:
             if container.ollama is None:

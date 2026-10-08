@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     search_default_top_k: int = Field(default=10, ge=1)
     search_max_query_chars: int = Field(default=1000, ge=10)
 
+    # Hybrid Search & Reranking (FR-24, FR-25)
+    search_mode: str = Field(default="hybrid_rerank", pattern="^(dense|bm25|hybrid|hybrid_rerank)$")
+    hybrid_rrf_k: int = Field(default=60, ge=1)
+    hybrid_dense_weight: float = Field(default=1.0, ge=0.0)
+    hybrid_sparse_weight: float = Field(default=1.0, ge=0.0)
+    hybrid_candidate_multiplier: int = Field(default=4, ge=1, le=10)
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_enabled: bool = True
+
     qa_default_top_k: int = Field(default=6, ge=1)
     qa_max_top_k: int = Field(default=10, ge=1, le=20)
     qa_max_question_chars: int = Field(default=1000, ge=10)
