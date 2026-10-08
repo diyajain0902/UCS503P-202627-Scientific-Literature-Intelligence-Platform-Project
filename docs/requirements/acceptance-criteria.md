@@ -88,10 +88,10 @@ Each criterion `AC-<req>.<n>` must be verifiable by an automated test, an evalua
 
 ## Evaluation (M3)
 
-- AC-19.1 Eval dataset is version-controlled with a schema, labeler, and labeling date per item; items are manually labeled.
-- AC-19.2 Recall@k and MRR implementations pass unit tests on hand-computed examples.
-- AC-19.3 Each eval run writes a record (dataset version, corpus manifest, model/config, git SHA, metrics, timestamp).
-- AC-21.1 CI fails if Recall@5 falls below the documented threshold on the fixed eval corpus.
+- AC-19.1 Eval dataset is version-controlled with a schema, labeler, and labeling date per item; label provenance is recorded and never misrepresented (ADR-0007: assistant-written, review status per item). *(M3: verified — schema, `check-labels`)*
+- AC-19.2 Recall@k and MRR implementations pass unit tests on hand-computed examples. *(M3: verified)*
+- AC-19.3 Each eval run writes a record (dataset version, corpus manifest, model/config, git SHA, metrics, timestamp). *(M3: verified; also hardware and power source)*
+- AC-21.1 CI fails if Recall@5 falls below the documented threshold on the fixed eval corpus. *(M3: implemented; threshold 0.675 — see docs/evaluation.md §5)*
 
 ## Infrastructure
 

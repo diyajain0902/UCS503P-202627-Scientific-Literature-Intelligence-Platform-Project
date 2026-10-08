@@ -204,6 +204,17 @@ def test_ollama_bad_responses(response: httpx.Response, error: type[Exception]) 
         _provider(lambda request: response).generate(REQUEST)
 
 
+def test_ollama_unload_evicts_model() -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, json={"response": "", "done": True})
+
+    _provider(handler).unload()
+    assert seen == {"model": "qwen2.5:3b", "prompt": "", "keep_alive": 0}
+
+
 def test_ollama_warm_up_loads_model_without_generating() -> None:
     seen: dict[str, Any] = {}
 

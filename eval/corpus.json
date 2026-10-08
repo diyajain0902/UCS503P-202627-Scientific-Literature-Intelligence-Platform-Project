@@ -1,0 +1,107 @@
+{
+  "name": "nlp-core",
+  "version": "1",
+  "domain": "Natural language processing (arXiv cs.CL / cs.LG)",
+  "papers": [
+    {
+      "arxiv_id": "1706.03762",
+      "version": 7,
+      "title": "Attention Is All You Need"
+    },
+    {
+      "arxiv_id": "1810.04805",
+      "version": 2,
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding"
+    },
+    {
+      "arxiv_id": "1907.11692",
+      "version": 1,
+      "title": "RoBERTa: A Robustly Optimized BERT Pretraining Approach"
+    },
+    {
+      "arxiv_id": "1910.10683",
+      "version": 4,
+      "title": "Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer"
+    },
+    {
+      "arxiv_id": "2005.14165",
+      "version": 4,
+      "title": "Language Models are Few-Shot Learners"
+    },
+    {
+      "arxiv_id": "1301.3781",
+      "version": 3,
+      "title": "Efficient Estimation of Word Representations in Vector Space"
+    },
+    {
+      "arxiv_id": "1409.0473",
+      "version": 7,
+      "title": "Neural Machine Translation by Jointly Learning to Align and Translate"
+    },
+    {
+      "arxiv_id": "1409.3215",
+      "version": 3,
+      "title": "Sequence to Sequence Learning with Neural Networks"
+    },
+    {
+      "arxiv_id": "1802.05365",
+      "version": 2,
+      "title": "Deep contextualized word representations"
+    },
+    {
+      "arxiv_id": "1909.11942",
+      "version": 6,
+      "title": "ALBERT: A Lite BERT for Self-supervised Learning of Language Representations"
+    },
+    {
+      "arxiv_id": "1910.01108",
+      "version": 4,
+      "title": "DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter"
+    },
+    {
+      "arxiv_id": "2005.11401",
+      "version": 4,
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+    },
+    {
+      "arxiv_id": "2004.04906",
+      "version": 3,
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering"
+    },
+    {
+      "arxiv_id": "1908.10084",
+      "version": 1,
+      "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
+    },
+    {
+      "arxiv_id": "1906.08237",
+      "version": 2,
+      "title": "XLNet: Generalized Autoregressive Pretraining for Language Understanding"
+    },
+    {
+      "arxiv_id": "1910.13461",
+      "version": 1,
+      "title": "BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension"
+    },
+    {
+      "arxiv_id": "2106.09685",
+      "version": 2,
+      "title": "LoRA: Low-Rank Adaptation of Large Language Models"
+    },
+    {
+      "arxiv_id": "1607.01759",
+      "version": 3,
+      "title": "Bag of Tricks for Efficient Text Classification"
+    },
+    {
+      "arxiv_id": "1508.07909",
+      "version": 5,
+      "title": "Neural Machine Translation of Rare Words with Subword Units"
+    },
+    {
+      "arxiv_id": "2302.13971",
+      "version": 1,
+      "title": "LLaMA: Open and Efficient Foundation Language Models"
+    }
+  ]
+}

@@ -72,7 +72,7 @@ Rules:
 
 ## 5. Evaluation
 
-- Eval set: version-controlled under `eval/` (questions, gold chunk/passage labels, corpus manifest with arXiv IDs + versions). Manually labeled by the team; label provenance recorded. Never auto-generate labels and present them as manual.
+- Eval set: version-controlled under `eval/` (questions, evidence-quote labels, corpus manifest with arXiv IDs + versions). Per ADR-0007 (team decision, M3) labels may be written by the AI assistant; every item records `labeler` and `review_status`, and reports state how many items were human-reviewed. Never present assistant-written or auto-generated labels as manual or human-validated.
 - Metrics: Recall@k (k = 1, 5, 10) and MRR implemented with unit tests on hand-computed cases.
 - Also measured, with methodology in `docs/evaluation.md`: citation validity rate, groundedness (human-spot-checked; any LLM-as-judge must be local and its limits stated), abstention precision/recall on unanswerable questions, latency percentiles, uptime.
 - CI retrieval gate: fail if Recall@5 drops below the documented threshold.
@@ -95,7 +95,7 @@ Address and document (in `docs/security.md`) at minimum:
 ## 7. Seven-step execution protocol
 
 1. Create this engineering contract. (done)
-2. Execute the master engineering prompt (plan + milestones). ← *current: M2 complete, awaiting approval for M3*
+2. Execute the master engineering prompt (plan + milestones). ← *current: M3 complete, awaiting approval for the RAG evaluation audit (step 4) / M4*
 3. Deliver one approved milestone at a time.
 4. Dedicated RAG evaluation audit — after retrieval and grounded Q&A exist.
 5. Dedicated security & privacy audit — after core controls exist, and again before release.

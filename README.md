@@ -4,7 +4,8 @@ UCS503P 202627 Scientific Literature Intelligence Platform Project — a retriev
 answers questions over arXiv and uploaded papers with citations to source pages. Everything runs locally
 (sentence-transformers embeddings, PostgreSQL + pgvector, Ollama for generation).
 
-**Status:** Milestone 2. Working: arXiv import by ID → page-aware extraction → chunking → local embeddings →
+**Status:** Milestone 3 (evaluation) complete. Baseline: Recall@5 0.70 (target 0.80 not met); see
+`docs/evaluation.md`. Milestone 2: Working: arXiv import by ID → page-aware extraction → chunking → local embeddings →
 pgvector semantic search, and grounded Q&A with the local Ollama model (citations checked server-side, explicit
 "insufficient evidence"). Not yet: evaluation (M3), PDF upload and corpus management (M4), summaries (M5).
 
@@ -90,6 +91,24 @@ Frontend:
 ```bash
 cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
+
+## Evaluation
+
+Uses a separate database (`slip_eval`) built from the pinned corpus in `eval/corpus.json`. Labels in
+`eval/qa_v1.json` were written by the AI assistant and are not human-reviewed (ADR-0007).
+
+```bash
+docker compose exec db psql -U slip -d slip -c "CREATE DATABASE slip_eval OWNER slip"
+```
+
+Then, with `SLIP_DATABASE_URL` pointing at `slip_eval` (use `127.0.0.1`):
+
+```bash
+cd backend && uv run alembic upgrade head && uv run python -m app.evaluation build-corpus && uv run python -m app.evaluation check-labels && uv run python -m app.evaluation retrieval
+```
+
+`python -m app.evaluation qa` runs grounded Q&A over all items (needs Ollama). Each run writes a record to
+`eval/runs/`. Plug the laptop in for latency measurements: battery power roughly doubles Q&A latency.
 
 ## Troubleshooting
 

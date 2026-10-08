@@ -32,6 +32,10 @@ class SearchService:
         self._max_top_k = max_top_k
         self._pgvector_checked = False
 
+    @property
+    def embedding_model(self) -> str:
+        return self._embedder.model_name
+
     def search(
         self, query: str, top_k: int, paper_ids: list[uuid.UUID] | None = None
     ) -> SearchResult:

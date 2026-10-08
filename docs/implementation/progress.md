@@ -2,6 +2,50 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 3: Evaluation and regression gates (branch `feature/m3-evaluation`)
+
+**Approval:** M3; domain NLP; **the team instructed the AI assistant to write all labels** (ADR-0007; `CLAUDE.md`
+§5 updated). All items carry `labeler: ai-assistant`, `review_status: unreviewed`. No human review has happened.
+
+**Delivered:** `backend/app/evaluation/` (dataset schema, metrics, corpus builder/verifier, label checker, runners,
+CLI `python -m app.evaluation`); `eval/corpus.json` (20 NLP papers pinned to exact arXiv versions);
+`eval/qa_v1.json` (40 answerable, 10 unanswerable, 110 evidence quotes); run records in `eval/runs/`;
+CI job `retrieval-eval`; `docs/evaluation.md`; ADR-0007.
+
+**Corpus build:** 20/20 papers ingested into `slip_eval` (1,207 pages, 1,634 chunks); manifest verified.
+
+**Labelling method:** evidence located by keyword search of each paper's extracted text (not the retriever);
+questions paraphrased; every quote verified by `check-labels`. Unanswerable items checked for absence of the
+answer by corpus-wide keyword search (notes per item); several are adversarial (name a corpus paper, ask for a fact
+only a neighbouring paper has).
+
+**Label-completeness review (found and fixed):** the first labels gave Recall@5 = 0.50, but all 20 misses had the
+correct paper in the top 5. A retriever-independent keyword review of every answerable item's gold paper raised
+the quotes from 52 to 110 and found two **wrong labels**: q026's quote described DPR's reader, not its encoders;
+q019's generic quote also matched prior-work passages. Both corrected. The pre-review run record is kept.
+
+**Defects found in the tooling and fixed:** (1) Q&A latency included cold model loading for the first question
+(33-41 s) and was labelled "warm"; the runner now warms both models first and measures cold start separately by
+unloading the model; the two mislabelled Q&A records were deleted before commit. (2) Latency varied 2-3x between
+runs because the laptop switched to battery; run records now include `power_source`. (3) Run records were written
+with CRLF; now LF.
+
+**Baselines** (details and tables: `docs/evaluation.md` §6):
+- Retrieval, official record `eval/runs/20261008T170309Z_retrieval_3eab94d.json` (clean commit, battery):
+  Recall@1 0.200, **Recall@5 0.700**, Recall@10 0.775, MRR 0.416, search p50/p95 41/50 ms. NFR-01 (0.80) not met.
+  Reproduced exactly from the earlier run (deterministic).
+- Q&A at qa_min_score 0.30: answer rate 0.75-0.825, cited-relevant 0.525-0.55, abstention recall 1.00,
+  false answers 0/10, citation validity 1.00 (records `20261008T135804Z_qa_03a01de.json`,
+  `20261008T164846Z_qa_03a01de.json`). Warm p50/p95 1.29/2.74 s (plugged in, likely) and 3.30/7.24 s
+  (battery); cold start 5.9-10.5 s. Run-to-run variance is material.
+- qa_min_score 0.40 run (`20261008T164357Z_qa_03a01de.json`): no quality change beyond variance; its latency is
+  invalid (run spanned about 3 h, probable sleep). Default kept at 0.30 (tuning on the test set avoided).
+
+**CI gate:** Recall@5 >= 0.675 (baseline minus one item for cross-platform float differences).
+
+**Commands and results (local):** ruff, format, mypy strict (64 files) pass; unit **116 passed**;
+`pytest -m "integration or model"` **51 passed**; `check-labels` ok; retrieval gate passed locally.
+
 ## 2026-10-08 — Milestone 2: Grounded Q&A (branch `feature/m2-grounded-qa`)
 
 **Approval:** M2, with the constraint "keep qwen2.5:3b" (no other models downloaded or compared).
