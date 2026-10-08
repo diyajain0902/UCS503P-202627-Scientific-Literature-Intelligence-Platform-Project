@@ -170,6 +170,55 @@ export const api = {
     request<ArxivResult[]>(`/arxiv/search?${new URLSearchParams({ q: query, max_results: '10' })}`),
   stats: () => request<Stats>('/stats'),
   settings: () => request<SettingsInfo>('/settings'),
+  summarize: (paperId: string) =>
+    request<Analysis>(`/papers/${encodeURIComponent(paperId)}/summary`, { method: 'POST' }),
+  extract: (paperId: string) =>
+    request<Analysis>(`/papers/${encodeURIComponent(paperId)}/extraction`, { method: 'POST' }),
+  synthesize: (topic: string, paperIds: string[]) =>
+    request<Analysis>('/synthesis', { method: 'POST', body: JSON.stringify({ topic, paper_ids: paperIds }) }),
+  compare: (paperIds: string[]) =>
+    request<Comparison>('/compare', { method: 'POST', body: JSON.stringify({ paper_ids: paperIds }) }),
+}
+
+export interface AnalysisEvidence {
+  label: string
+  chunk_id: string
+  paper_id: string
+  paper_title: string
+  arxiv_id: string | null
+  arxiv_version: number | null
+  page_start: number
+  page_end: number
+  score: number
+  text: string
+}
+
+export interface ExtractedField {
+  field: string
+  value: string
+  status: 'found' | 'unknown'
+  citations: QACitation[]
+}
+
+export interface Analysis {
+  id: string
+  kind: 'summary' | 'synthesis' | 'extraction'
+  paper_ids: string[]
+  topic: string | null
+  status: 'completed' | 'insufficient_evidence' | 'error'
+  reason: string | null
+  result: { claims?: QAClaim[]; fields?: ExtractedField[] }
+  evidence: AnalysisEvidence[]
+  generation_model: string | null
+  prompt_version: string
+  latency_ms: number
+  created_at: string
+}
+
+export interface Comparison {
+  fields: string[]
+  papers: { paper_id: string; title: string; analysis_id: string | null; fields: Record<string, ExtractedField> }[]
+  caveats: string[]
 }
 
 export interface PaperFilters {

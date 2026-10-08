@@ -76,10 +76,10 @@ Each criterion `AC-<req>.<n>` must be verifiable by an automated test, an evalua
 
 ## Summaries, extraction, comparison (M5)
 
-- AC-12.1 / AC-13.1 Summaries cite source chunks; cross-paper synthesis attributes each claim to its paper(s).
-- AC-14.1 Extraction output validates against a Pydantic schema; missing fields are `unknown`, never guessed.
-- AC-14.2 Each extracted value links to at least one supporting chunk, verified to exist.
-- AC-15.1 Comparison flags rows where datasets, protocols, or units differ instead of ranking them directly.
+- AC-12.1 / AC-13.1 Summaries cite source chunks; cross-paper synthesis attributes each claim to its paper(s). *(M5: verified — uncited claims dropped)*
+- AC-14.1 Extraction output validates against a Pydantic schema; missing fields are `unknown`, never guessed. *(M5: verified)*
+- AC-14.2 Each extracted value links to at least one supporting chunk, verified to exist. *(M5: verified; semantic correctness not guaranteed — see progress log)*
+- AC-15.1 Comparison flags rows where datasets, protocols, or units differ instead of ranking them directly. *(M5: verified for differing datasets; units/protocols not detected automatically)*
 
 ## Corpus management (M4)
 

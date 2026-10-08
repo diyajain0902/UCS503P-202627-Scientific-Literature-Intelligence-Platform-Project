@@ -16,6 +16,7 @@ from app.generation.provider import GenerationRequest, GenerationResult
 from app.ingestion.arxiv import ArxivId, ArxivMetadata
 from app.ingestion.chunking import ChunkingConfig, Tokenizer
 from app.ingestion.storage import FileStore
+from app.services.analysis import AnalysisService
 from app.services.corpus import CorpusService
 from app.services.ingestion import IngestionService
 from app.services.jobs import JobRunner
@@ -176,6 +177,7 @@ def make_test_container(
         max_pdf_pages=settings.max_pdf_pages,
     )
     search = SearchService(sessions, embedder, settings.search_max_top_k)
+    llm = provider or FakeProvider()
     return Container(
         settings=settings,
         session_factory=sessions,
@@ -184,5 +186,6 @@ def make_test_container(
         search=search,
         corpus=CorpusService(sessions, store),
         runner=JobRunner(1, ingestion.run_job),
-        qa=QAService(sessions, search, provider or FakeProvider(), qa_limits(settings)),
+        qa=QAService(sessions, search, llm, qa_limits(settings)),
+        analysis=AnalysisService(sessions, search, llm),
     )

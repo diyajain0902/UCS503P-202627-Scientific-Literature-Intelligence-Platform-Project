@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { CompareView } from './features/analysis/CompareView'
 import { CorpusView } from './features/corpus/CorpusView'
 import { Dashboard } from './features/dashboard/Dashboard'
 import { HistoryView } from './features/history/HistoryView'
@@ -16,6 +17,7 @@ const VIEWS = [
   ['ask', 'Ask'],
   ['search', 'Search passages'],
   ['corpus', 'Corpus'],
+  ['compare', 'Compare'],
   ['add', 'Add papers'],
   ['history', 'History'],
   ['settings', 'Settings'],
@@ -48,6 +50,7 @@ function App() {
         {view === 'ask' && <QAPanel />}
         {view === 'search' && <SearchPanel />}
         {view === 'corpus' && <CorpusView refreshKey={version} />}
+        {view === 'compare' && <CompareView refreshKey={version} />}
         {view === 'add' && (
           <>
             <ArxivSearch onImported={changed} />

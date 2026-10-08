@@ -56,6 +56,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--no-record", action="store_true", help="do not write a run record")
     parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="qa: also judge semantic support of each cited claim with the local model",
+    )
+    parser.add_argument(
         "--cold-samples",
         type=int,
         default=3,
@@ -108,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
             container.embedder.warm_up()
             container.ollama.warm_up()
             qa_config = dict(container.qa.describe())
-            record.update(run_qa(dataset, container.qa, qa_config))
+            judge = container.ollama if args.judge else None
+            record.update(run_qa(dataset, container.qa, qa_config, judge))
             if args.cold_samples:
                 cold = measure_cold_starts(
                     dataset, container.qa, container.ollama.unload, args.cold_samples

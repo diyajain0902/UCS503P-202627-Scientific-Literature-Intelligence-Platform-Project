@@ -2,6 +2,41 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 5: Summaries and knowledge extraction (branch `feature/m5-summaries-extraction`)
+
+Branched from `feature/m4-corpus-management` (M4 not yet merged).
+
+**Delivered:** `AnalysisService` (single-paper summary, cross-paper synthesis over 2-5 papers, structured
+extraction of task/method/dataset/metric/result/limitations, side-by-side comparison with a different-datasets
+caveat and no ranking); evidence gathered per facet inside the selected paper(s); prompts `analysis-v1` with the
+ADR-0006 evidence discipline; extraction fields are cited or `unknown`; migration `0004` (`analyses`, evidence
+snapshots); endpoints `POST /papers/{id}/summary`, `POST /papers/{id}/extraction`,
+`GET /papers/{id}/latest/{kind}`, `POST /synthesis`, `POST /compare`, `GET /analyses/{id}`; UI: Summarise and
+Extract on each paper, Compare page with table and synthesis. Groundedness judge (`--judge`) for Q&A evaluation.
+
+**Defect found and fixed:** a race in upload failure handling (job marked failed before its file was deleted)
+surfaced as an intermittent M4 test failure; the file is now discarded before the failure is recorded; the
+integration suite then passed three consecutive runs.
+
+**Commands and results (local):** ruff, format, mypy strict (71 files) pass; unit **123 passed**;
+`pytest -m integration` **71 passed** (x3); frontend lint, typecheck, build pass, `npm test` **24 passed**.
+
+**Groundedness evaluation** (run `20261008T182021Z_qa_6080738.json`, AC power): 33 claims judged — 69.7%
+supported, 18.2% partial, 12.1% not supported (self-judged, not human-validated). Answer rate 0.80, false answers
+0/10, citation validity 1.00, warm p95 3.27 s.
+
+**Real-model end-to-end** (Docker, schema 0004, qwen2.5:3b; corpus: 1706.03762v7 + 1810.04805v2):
+- Extraction (Transformer): task "Neural machine translation", method "Transformer model", dataset "WMT 2014
+  English-German, …", metric "BLEU score", limitations unknown — sensible; **result "4.67 (BLEU score)" is wrong**:
+  4.67 is a perplexity value in Table 3 (the model misread a flattened table). Citation valid, value incorrect.
+- Summary: completed but as one long claim citing 6 passages (prompt asks for 3-5 short claims).
+- Compare: caveat correctly raised for different datasets; BERT's metric unknown.
+- Synthesis "pre-training objective": abstained (BERT discusses it; the Transformer paper does not).
+
+**Limitations:** valid citations do not guarantee correct values (tables are flattened by text extraction);
+synthesis is conservative; units/protocol differences are not detected automatically; no automated
+real-model test for analyses (one manual run recorded above).
+
 ## 2026-10-08 — Milestone 4: Ingestion and corpus management (branch `feature/m4-corpus-management`)
 
 **M3 note:** PR #6 merged. The first three CI runs of the new `retrieval-eval` job failed at `build-corpus`;

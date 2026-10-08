@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Page, type Paper, type PaperFilters } from '../../api/client'
+import { PaperAnalysis } from '../analysis/PaperAnalysis'
 
 const PAGE_SIZE = 20
 
@@ -37,6 +38,7 @@ function PaperDetails({ paper, onDeleted }: { paper: Paper; onDeleted: () => voi
       {paper.authors.length > 0 && <p className="small">{paper.authors.join(', ')}</p>}
       {paper.categories.length > 0 && <p className="small muted">Categories: {paper.categories.join(', ')}</p>}
       {paper.abstract && <p className="abstract">{paper.abstract}</p>}
+      <PaperAnalysis paperId={paper.id} />
       {!confirming ? (
         <button type="button" className="danger" onClick={() => setConfirming(true)}>
           Delete paper

@@ -26,4 +26,4 @@ Each milestone lands on its own branch(es) and merges to `main` via PR after the
 
 ## Status
 
-- M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done (PR #5) · M3 done (PR #6) · M4 done, pending merge (`feature/m4-corpus-management`).
+- M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done (PR #5) · M3 done (PR #6) · M4 done, pending merge (`feature/m4-corpus-management`) · M5 done, pending merge (`feature/m5-summaries-extraction`, branched from M4).

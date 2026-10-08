@@ -95,7 +95,7 @@ Address and document (in `docs/security.md`) at minimum:
 ## 7. Seven-step execution protocol
 
 1. Create this engineering contract. (done)
-2. Execute the master engineering prompt (plan + milestones). ← *current: M4 complete, awaiting approval for the next step*
+2. Execute the master engineering prompt (plan + milestones). ← *current: M5 complete, awaiting approval for the next step*
 3. Deliver one approved milestone at a time.
 4. Dedicated RAG evaluation audit — after retrieval and grounded Q&A exist.
 5. Dedicated security & privacy audit — after core controls exist, and again before release.

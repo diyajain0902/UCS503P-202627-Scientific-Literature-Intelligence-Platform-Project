@@ -97,5 +97,10 @@ system scored Recall@5 = 0.50; that run record is kept for transparency.
   while keeping 27/28 answerable items whose relevant passage is in the top 6. Two runs at 0.40 showed no quality
   difference beyond run-to-run variance and the value would be tuned on the test set itself, so the default stays
   0.30.
+- Groundedness (M5, run `20261008T182021Z_qa_6080738.json`, AC power, `--judge`): 33 cited claims judged by
+  the local model — 69.7% supported, 18.2% partially supported, 12.1% not supported, 0 unusable verdicts.
+  **Self-judged by the same qwen2.5:3b that wrote the answers; not human-validated.** Same run: answer rate 0.80,
+  cited-relevant 0.55, abstention recall 1.00, false answers 0/10, citation validity 1.00, warm p50/p95
+  2.09/3.27 s, cold 5.5-9.2 s.
 - "Cited-relevant" is a deterministic proxy (a valid citation points to a labelled passage); semantic support of
   each claim is not measured here.

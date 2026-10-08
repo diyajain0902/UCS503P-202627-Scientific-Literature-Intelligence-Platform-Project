@@ -23,7 +23,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.errors import AppError
 from app.db.models import Document
 from app.evaluation.dataset import REPO_ROOT, EvalDataset, EvalItem, is_relevant
+from app.evaluation.groundedness import JUDGE_PROMPT_VERSION, judge_claim
 from app.evaluation.metrics import mean_reciprocal_rank, percentile, ratio, recall_at_k
+from app.generation.prompts import EvidencePassage
+from app.generation.provider import GenerationProvider
 from app.services.qa import QAService
 from app.services.search import SearchService
 
@@ -178,7 +181,27 @@ def _cited_relevant(item: EvalItem, answer: Any) -> bool:
     return False
 
 
-def run_qa(dataset: EvalDataset, qa: QAService, qa_config: dict[str, Any]) -> dict[str, Any]:
+def _judge_answer(answer: Any, judge: GenerationProvider) -> list[str | None]:
+    """Judge each claim against the passages it validly cites."""
+    by_label = {e.label: e for e in answer.evidence}
+    verdicts: list[str | None] = []
+    for claim in answer.claims:
+        index = int(str(claim["index"]))
+        passages = [
+            EvidencePassage(e.label, e.text, e.paper_title, e.page_start, e.page_end)
+            for c in answer.citations
+            if c.claim_index == index and c.valid and (e := by_label.get(c.label)) is not None
+        ]
+        verdicts.append(judge_claim(judge, str(claim["text"]), passages) if passages else None)
+    return verdicts
+
+
+def run_qa(
+    dataset: EvalDataset,
+    qa: QAService,
+    qa_config: dict[str, Any],
+    judge: GenerationProvider | None = None,
+) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     latencies: list[float] = []
     for item in dataset.items:
@@ -207,6 +230,10 @@ def run_qa(dataset: EvalDataset, qa: QAService, qa_config: dict[str, Any]) -> di
                 "evidence_count": len(answer.evidence),
                 "latency_ms": answer.latency_ms,
                 "wall_ms": round((time.perf_counter() - started) * 1000, 1),
+                # Judged after timing, so judging does not affect measured latency.
+                "claim_verdicts": _judge_answer(answer, judge)
+                if judge is not None and answer.status == "answered"
+                else [],
             }
         )
 
@@ -237,6 +264,20 @@ def run_qa(dataset: EvalDataset, qa: QAService, qa_config: dict[str, Any]) -> di
         "citation_validity_rate": ratio(cit_valid, cit_total),
         "errors": sum(1 for i in items if i["status"] == "error"),
     }
+    if judge is not None:
+        verdicts = [v for i in items for v in i.get("claim_verdicts", [])]
+        judged = [v for v in verdicts if v is not None]
+        metrics["groundedness"] = {
+            "judge_prompt_version": JUDGE_PROMPT_VERSION,
+            "claims_judged": len(judged),
+            "unusable_verdicts": len(verdicts) - len(judged),
+            "supported_rate": ratio(sum(v == "supported" for v in judged), len(judged)),
+            "partially_supported_rate": ratio(
+                sum(v == "partially_supported" for v in judged), len(judged)
+            ),
+            "not_supported_rate": ratio(sum(v == "not_supported" for v in judged), len(judged)),
+            "limitations": "Self-judged by the answering model; not human-validated.",
+        }
     if latencies:
         # Callers must warm both models first; see app/evaluation/__main__.py.
         metrics["latency_ms_p50_warm"] = percentile(latencies, 50)
