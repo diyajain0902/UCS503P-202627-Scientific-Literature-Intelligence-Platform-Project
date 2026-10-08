@@ -10,13 +10,20 @@ Usage::
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from app.container import build_container
 from app.core.config import get_settings
 from app.core.logging import configure_logging
-from app.evaluation.corpus import build_corpus, check_labels, job_failures, verify_corpus
+from app.evaluation.corpus import (
+    CorpusMismatchError,
+    build_corpus,
+    check_labels,
+    job_failures,
+    verify_corpus,
+)
 from app.evaluation.dataset import EVAL_DIR, load_dataset, load_manifest
 from app.evaluation.runner import (
     base_record,
@@ -25,6 +32,13 @@ from app.evaluation.runner import (
     run_retrieval,
     write_record,
 )
+
+
+def _fail(message: str) -> None:
+    """Print a failure; in GitHub Actions also emit an annotation (visible without login)."""
+    print(message)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::error::{message}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,8 +73,12 @@ def main(argv: list[str] | None = None) -> int:
                 print(line)
             failures = job_failures(container.session_factory)
             for failure in failures:
-                print(f"FAILED {failure}")
-            verify_corpus(manifest, container.session_factory)
+                _fail(f"FAILED {failure}")
+            try:
+                verify_corpus(manifest, container.session_factory)
+            except CorpusMismatchError as exc:
+                _fail(str(exc))
+                return 1
             print(f"corpus ok: {len(manifest.papers)} papers")
             return 1 if failures else 0
 
@@ -68,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         dataset = load_dataset(args.dataset.resolve())
         problems = check_labels(dataset, container.session_factory)
         for p in problems:
-            print(f"LABEL {p.item_id} {p.arxiv_id}: {p.problem}: {p.quote!r}")
+            _fail(f"LABEL {p.item_id} {p.arxiv_id}: {p.problem}: {p.quote!r}")
         if problems:
             return 2
         if args.command == "check-labels":
@@ -102,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.min_recall_at_5 is not None:
             recall = float(record["metrics"]["recall@5"])
             if recall < args.min_recall_at_5:
-                print(f"GATE FAILED: recall@5 {recall:.4f} < {args.min_recall_at_5:.4f}")
+                _fail(f"GATE FAILED: recall@5 {recall:.4f} < {args.min_recall_at_5:.4f}")
                 return 3
             print(f"gate passed: recall@5 {recall:.4f} >= {args.min_recall_at_5:.4f}")
         return 0
