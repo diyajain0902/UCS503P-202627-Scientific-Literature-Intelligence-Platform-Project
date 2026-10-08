@@ -4,7 +4,8 @@ UCS503P 202627 Scientific Literature Intelligence Platform Project — a retriev
 answers questions over arXiv and uploaded papers with citations to source pages. Everything runs locally
 (sentence-transformers embeddings, PostgreSQL + pgvector, Ollama for generation).
 
-**Status:** Milestone 4 (corpus management: PDF upload, arXiv search, filters, delete, history, dashboard) complete.
+**Status:** Milestone 5 (summaries, cross-paper synthesis, structured extraction, comparison) complete.
+Milestone 4 (corpus management: PDF upload, arXiv search, filters, delete, history, dashboard):
 Milestone 3 (evaluation): Baseline: Recall@5 0.70 (target 0.80 not met); see
 `docs/evaluation.md`. Milestone 2: Working: arXiv import by ID → page-aware extraction → chunking → local embeddings →
 pgvector semantic search, and grounded Q&A with the local Ollama model (citations checked server-side, explicit

@@ -328,3 +328,49 @@ class AnswerCitation(Base):
 
     # Lets the unit of work insert evidence rows before the citations that reference them.
     evidence: Mapped[AnswerEvidence | None] = relationship()
+
+
+class AnalysisKind(enum.StrEnum):
+    SUMMARY = "summary"
+    SYNTHESIS = "synthesis"
+    EXTRACTION = "extraction"
+
+
+class AnalysisStatus(enum.StrEnum):
+    COMPLETED = "completed"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+    ERROR = "error"
+
+
+class Analysis(Base):
+    """A summary, cross-paper synthesis, or structured extraction (FR-12 to FR-14).
+
+    ``evidence`` is a snapshot of the passages shown to the model, so results stay inspectable
+    after the source paper is deleted. ``result`` holds validated claims or fields with their
+    citation verdicts.
+    """
+
+    __tablename__ = "analyses"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_values(AnalysisKind)})", name="ck_analyses_kind"),
+        CheckConstraint(f"status IN ({_values(AnalysisStatus)})", name="ck_analyses_status"),
+        CheckConstraint(
+            "status = 'completed' OR reason IS NOT NULL", name="ck_analyses_reason_unless_completed"
+        ),
+        CheckConstraint("latency_ms >= 0", name="ck_analyses_latency"),
+        Index("ix_analyses_kind_created", "kind", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    kind: Mapped[str] = mapped_column(String(16))
+    paper_ids: Mapped[list[str]] = mapped_column(JSONB)
+    topic: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32))
+    reason: Mapped[str | None] = mapped_column(Text)
+    result: Mapped[dict[str, object]] = mapped_column(JSONB)
+    evidence: Mapped[list[dict[str, object]]] = mapped_column(JSONB)
+    generation_model: Mapped[str | None] = mapped_column(String(128))
+    prompt_version: Mapped[str] = mapped_column(String(32))
+    config: Mapped[dict[str, object]] = mapped_column(JSONB)
+    latency_ms: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

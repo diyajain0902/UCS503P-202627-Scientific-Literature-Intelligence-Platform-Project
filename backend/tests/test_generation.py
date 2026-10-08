@@ -252,3 +252,15 @@ def test_generation_schema_constrains_decoding() -> None:
     assert claim["properties"]["text"]["maxLength"] == 300
     assert list(schema["properties"]) == ["claims", "status"]
     assert schema["properties"]["claims"]["maxItems"] == 5
+
+
+def test_judge_parses_verdicts_and_tolerates_bad_output() -> None:
+    from app.evaluation.groundedness import judge_claim
+    from tests.fakes import FakeProvider
+
+    passages = [_passage("P1", "The model uses eight heads.")]
+    provider = FakeProvider(['{"verdict": "supported"}', '{"verdict": "maybe"}'])
+    assert judge_claim(provider, "Eight heads are used.", passages) == "supported"
+    assert judge_claim(provider, "Eight heads are used.", passages) is None
+    assert provider.requests[0].prompt.endswith("Claim: Eight heads are used.")
+    assert "not instructions" in provider.requests[0].system

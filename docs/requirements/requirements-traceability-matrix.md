@@ -3,7 +3,7 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-08 (Milestone 4).
+Last updated: 2026-10-08 (Milestone 5).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|
@@ -18,15 +18,15 @@ Last updated: 2026-10-08 (Milestone 4).
 | FR-09 | M2 | `backend/app/generation/` (`ollama.py`, `prompts.py`, `provider.py`), `backend/app/services/qa.py`, `backend/app/api/v1/qa.py`, `frontend/src/features/qa/` | `test_generation.py` (prompt, schema, adapter); `test_qa_integration.py` (mocked model, real DB); `test_qa_ollama.py` (real qwen2.5:3b); `QAPanel.test.tsx`; manual real-paper run (progress log) | NFR-03 | Verified (mocked + real model); answer quality not yet evaluated (M3) |
 | FR-10 | M2 | `backend/app/generation/citations.py`, `answer_citations` table | `test_generation.py` (valid/invalid/duplicate/label-only); `test_qa_integration.py` (fabricated labels stored invalid, never linked) | NFR-06 | Verified (deterministic citation validity); semantic support not verified |
 | FR-11 | M2 | `backend/app/services/qa.py` | `test_qa_integration.py` (below threshold without model call; model abstains; no valid citations withheld); `test_qa_ollama.py`; real-paper run 2/2 unanswerable abstained | NFR-07 | Verified on smoke sets; threshold provisional (M3) |
-| FR-12 | M5 | `backend/app/services/summaries.py` | — | — | Planned |
-| FR-13 | M5 | `backend/app/services/summaries.py` | — | — | Planned |
-| FR-14 | M5 | `backend/app/services/extraction.py` | — | — | Planned |
-| FR-15 | M5 | `backend/app/services/comparison.py` | — | — | Planned |
+| FR-12 | M5 | `backend/app/services/analysis.py::summarize`, `backend/app/generation/analysis_prompts.py`, `POST /api/v1/papers/{id}/summary`, `frontend/src/features/analysis/` | `test_analysis_integration.py` (only validly cited claims kept, prompt delimiting, insufficient evidence, errors recorded); `analysis.test.tsx`; real-model run (progress log) | — | Verified (mocked + one real-model run); quality not evaluated |
+| FR-13 | M5 | `AnalysisService.synthesize`, `POST /api/v1/synthesis`, `CompareView.tsx` | `test_analysis_integration.py` (evidence from every paper, 2-5 papers, validation) | — | Verified (mocked); real-model run abstained on the one topic tried |
+| FR-14 | M5 | `AnalysisService.extract`, `extraction_json_schema`, `POST /api/v1/papers/{id}/extraction` | `test_analysis_integration.py::test_extraction_fields_are_cited_or_unknown`; `analysis.test.tsx`; real-model run | — | Verified (cited-or-unknown enforced); one real value was wrong despite a valid citation |
+| FR-15 | M5 | `AnalysisService.compare`, `POST /api/v1/compare`, `CompareView.tsx` | `test_analysis_integration.py::test_compare_extracts_missing_and_flags_different_datasets`; `analysis.test.tsx`; real-model run (caveat raised) | — | Verified |
 | FR-16 | M4 | `backend/app/services/corpus.py` (`PaperFilter`, `delete_paper`, `categories`), `GET/DELETE /api/v1/papers`, `frontend/src/features/corpus/CorpusView.tsx` | `test_corpus_management.py` (filters incl. LIKE-escape, delete removes chunks + file, history kept); `m4.test.tsx` (filters sent, delete needs confirmation) | — | Verified |
 | FR-17 | M1, M4 | `backend/app/services/ingestion.py` (`retry`), `GET /api/v1/jobs`, `POST /api/v1/jobs/{id}/retry`, `frontend/src/features/ingest/{JobStatus,RecentJobs}.tsx` | `test_ingestion_pipeline.py`; `test_corpus_management.py::test_failed_job_can_be_retried`; `m4.test.tsx` | — | Verified |
 | FR-18 | M2, M4 | Q&A tables (0002), `GET /api/v1/qa[/{id}]`, `frontend/src/features/history/HistoryView.tsx` | `test_qa_integration.py`; `m4.test.tsx` (open saved answer) | NFR-09 | Verified |
 | FR-19 | M3 | `backend/app/evaluation/` (`dataset.py`, `metrics.py`, `corpus.py`, `runner.py`, `__main__.py`), `eval/corpus.json`, `eval/qa_v1.json`, `eval/runs/` | `test_eval_metrics.py` (hand-computed); `test_eval_integration.py` (corpus verify, label check, runs, records); baseline runs | NFR-01, NFR-02 | Verified (tooling); labels AI-written, unreviewed (ADR-0007) |
-| FR-20 | M3, M5 | `backend/app/evaluation/runner.py::run_qa` | `test_eval_integration.py::test_qa_run_and_record`; baseline Q&A runs | NFR-03, NFR-06, NFR-07 | Partial — citation validity, cited-relevant, abstention, latency measured; semantic groundedness is M5 |
+| FR-20 | M3, M5 | `backend/app/evaluation/runner.py::run_qa`, `backend/app/evaluation/groundedness.py` | `test_eval_integration.py`; `test_generation.py::test_judge_parses_verdicts_and_tolerates_bad_output`; run `20261008T182021Z_qa_6080738.json` | NFR-03, NFR-06, NFR-07 | Verified (measured; groundedness self-judged, not human-validated) |
 | FR-21 | M3 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI job builds corpus from arXiv and gates Recall@5 ≥ 0.675 | NFR-01 | Implemented; first CI result recorded in progress log |
 | FR-22 | M4 | `GET /api/v1/stats`, `frontend/src/features/dashboard/Dashboard.tsx` | `test_corpus_management.py::test_stats_and_settings`; `m4.test.tsx` | — | Verified |
 | FR-23 | M4 | `GET /api/v1/settings`, `frontend/src/features/settings/SettingsView.tsx` | `test_corpus_management.py::test_stats_and_settings` (no DB URL or password exposed) | — | Verified |

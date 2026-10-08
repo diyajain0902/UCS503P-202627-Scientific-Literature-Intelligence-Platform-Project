@@ -195,9 +195,11 @@ class IngestionService:
                 self._run_arxiv(job)
         except AppError as exc:
             logger.info("ingestion_job_failed", extra={"job_id": str(job_id), "reason": exc.code})
-            self._fail(job_id, exc.message)
             if kind == JobKind.PDF_UPLOAD.value and isinstance(exc, DocumentRejectedError):
-                self._discard_upload(job_id)  # permanent rejection: retrying cannot help
+                # Permanent rejection: retrying cannot help. Discard before reporting failure so
+                # clients never observe a failed job whose file still exists.
+                self._discard_upload(job_id)
+            self._fail(job_id, exc.message)
         except Exception:
             logger.exception("ingestion_job_crashed", extra={"job_id": str(job_id)})
             self._fail(job_id, "Unexpected internal error during ingestion; see server logs.")

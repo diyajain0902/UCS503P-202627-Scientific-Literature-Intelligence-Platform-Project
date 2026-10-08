@@ -16,6 +16,7 @@ from app.retrieval.embedding import (
     SentenceTransformerEmbedder,
     required_input_tokens,
 )
+from app.services.analysis import AnalysisService
 from app.services.corpus import CorpusService
 from app.services.ingestion import IngestionService
 from app.services.jobs import JobRunner
@@ -33,6 +34,7 @@ class Container:
     corpus: CorpusService
     runner: JobRunner
     qa: QAService
+    analysis: AnalysisService
     engine: Engine | None = None
     arxiv: ArxivClient | None = None
     ollama: OllamaProvider | None = None
@@ -100,6 +102,9 @@ def build_container(settings: Settings) -> Container:
         corpus=CorpusService(session_factory, store),
         runner=JobRunner(settings.ingestion_workers, ingestion.run_job),
         qa=QAService(session_factory, search, ollama, qa_limits(settings)),
+        analysis=AnalysisService(
+            session_factory, search, ollama, max_context_chars=settings.qa_max_context_chars
+        ),
         engine=engine,
         arxiv=arxiv,
         ollama=ollama,

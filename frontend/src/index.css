@@ -108,3 +108,11 @@ input.narrow { flex: 0 0 5.5rem; }
 .settings-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
 .settings-table th, .settings-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 .settings-table th { color: var(--text-muted); font-weight: 500; width: 40%; }
+
+.analysis { margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 0 0 0.75rem; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; max-height: 16rem; overflow-y: auto; }
+.table-scroll { overflow-x: auto; margin-top: 0.75rem; }
+.compare-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+.compare-table th, .compare-table td { border: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
+.synthesis-form { margin-top: 1rem; }

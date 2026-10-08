@@ -93,10 +93,10 @@ def _pages(passage: EvidencePassage) -> str:
     return f"{passage.page_start}-{passage.page_end}"
 
 
-def build_prompt(question: str, passages: list[EvidencePassage]) -> str:
+def build_prompt(question: str, passages: list[EvidencePassage], heading: str = "Question") -> str:
     blocks = [
         f'<passage id="{p.label}" paper="{_neutralize(p.paper_title).replace(chr(34), chr(39))}" '
         f'pages="{_pages(p)}">\n{_neutralize(p.text)}\n</passage>'
         for p in passages
     ]
-    return "Passages:\n\n" + "\n\n".join(blocks) + "\n\nQuestion: " + " ".join(question.split())
+    return "Passages:\n\n" + "\n\n".join(blocks) + f"\n\n{heading}: " + " ".join(question.split())

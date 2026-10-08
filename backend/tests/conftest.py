@@ -55,7 +55,7 @@ def sessions(migrated_engine: Engine) -> sessionmaker[Session]:
     with migrated_engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE papers, documents, chunks, ingestion_jobs, queries, answers, "
+                "TRUNCATE papers, documents, chunks, ingestion_jobs, queries, answers, analyses, "
                 "answer_evidence, answer_citations CASCADE"
             )
         )
