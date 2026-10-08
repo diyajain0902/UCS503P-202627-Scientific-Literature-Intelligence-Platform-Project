@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     ollama_base_url: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:11434")
     ollama_model: str = Field(default="qwen2.5:3b", min_length=1)
     ollama_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
+    # Bounded generation (AC-09.2). num_ctx must hold the prompt, the evidence, and the answer.
+    ollama_num_ctx: int = Field(default=4096, ge=1024, le=32768)
+    ollama_max_tokens: int = Field(default=512, ge=32, le=4096)
+    ollama_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    ollama_seed: int = 0
+    ollama_keep_alive: str = Field(default="30m", pattern=r"^-?\d+[smh]?$")
+    ollama_warm_up: bool = True
 
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimension: int = Field(default=384, gt=0)
@@ -48,6 +55,14 @@ class Settings(BaseSettings):
     search_default_top_k: int = Field(default=10, ge=1)
     search_max_query_chars: int = Field(default=1000, ge=10)
 
+    qa_default_top_k: int = Field(default=6, ge=1)
+    qa_max_top_k: int = Field(default=10, ge=1, le=20)
+    qa_max_question_chars: int = Field(default=1000, ge=10)
+    # Passages scoring below this cosine similarity are not shown to the model. Provisional value
+    # for MiniLM; to be calibrated against the M3 evaluation set.
+    qa_min_score: float = Field(default=0.30, ge=-1.0, le=1.0)
+    qa_max_context_chars: int = Field(default=12000, ge=1000)
+
     @model_validator(mode="after")
     def _check_consistency(self) -> "Settings":
         content_tokens = self.chunk_window_tokens - 2
@@ -55,6 +70,8 @@ class Settings(BaseSettings):
             raise ValueError("chunk_overlap_tokens must be smaller than the chunk content window")
         if self.search_default_top_k > self.search_max_top_k:
             raise ValueError("search_default_top_k must not exceed search_max_top_k")
+        if self.qa_default_top_k > self.qa_max_top_k:
+            raise ValueError("qa_default_top_k must not exceed qa_max_top_k")
         return self
 
 

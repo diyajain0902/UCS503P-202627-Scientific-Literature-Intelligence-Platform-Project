@@ -6,8 +6,10 @@ from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -57,6 +59,12 @@ TERMINAL_JOB_STATES = frozenset({JobState.READY, JobState.FAILED})
 
 class JobKind(enum.StrEnum):
     ARXIV_IMPORT = "arxiv_import"
+
+
+class AnswerStatus(enum.StrEnum):
+    ANSWERED = "answered"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+    ERROR = "error"
 
 
 def _values(enum_cls: type[enum.StrEnum]) -> str:
@@ -193,3 +201,126 @@ class IngestionJob(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Query(Base):
+    """A question asked through grounded Q&A (FR-18)."""
+
+    __tablename__ = "queries"
+    __table_args__ = (CheckConstraint("top_k >= 1", name="ck_queries_top_k"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    question: Mapped[str] = mapped_column(Text)
+    top_k: Mapped[int] = mapped_column(Integer)
+    paper_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+    answer: Mapped["Answer | None"] = relationship(
+        back_populates="query", cascade="all, delete-orphan", passive_deletes=True, uselist=False
+    )
+
+
+class Answer(Base):
+    """The outcome of a query, with the configuration that produced it (NFR-09)."""
+
+    __tablename__ = "answers"
+    __table_args__ = (
+        CheckConstraint(f"status IN ({_values(AnswerStatus)})", name="ck_answers_status"),
+        CheckConstraint(
+            "status = 'answered' OR reason IS NOT NULL", name="ck_answers_reason_unless_answered"
+        ),
+        CheckConstraint("latency_ms >= 0", name="ck_answers_latency"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    query_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("queries.id", ondelete="CASCADE"), unique=True
+    )
+    status: Mapped[str] = mapped_column(String(32))
+    reason: Mapped[str | None] = mapped_column(Text)
+    claims: Mapped[list[dict[str, object]]] = mapped_column(JSONB, default=list)
+    """[{"index": int, "text": str, "support": "cited" | "unsupported"}]"""
+    generation_model: Mapped[str | None] = mapped_column(String(128))
+    prompt_version: Mapped[str] = mapped_column(String(32))
+    embedding_model: Mapped[str] = mapped_column(String(128))
+    config: Mapped[dict[str, object]] = mapped_column(JSONB)
+    """Retrieval and generation settings used for this answer (NFR-09)."""
+    retrieval_ms: Mapped[float | None] = mapped_column(Float)
+    generation_ms: Mapped[float | None] = mapped_column(Float)
+    latency_ms: Mapped[float] = mapped_column(Float)
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    query: Mapped[Query] = relationship(back_populates="answer")
+    evidence: Mapped[list["AnswerEvidence"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, order_by="AnswerEvidence.rank"
+    )
+    citations: Mapped[list["AnswerCitation"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="[AnswerCitation.claim_index, AnswerCitation.position]",
+    )
+
+
+class AnswerEvidence(Base):
+    """A passage shown to the model; snapshotted so history survives deletion of the paper."""
+
+    __tablename__ = "answer_evidence"
+    __table_args__ = (
+        UniqueConstraint("answer_id", "label", name="uq_answer_evidence_answer_label"),
+        CheckConstraint("rank >= 1", name="ck_answer_evidence_rank"),
+        CheckConstraint(
+            "page_start >= 1 AND page_start <= page_end", name="ck_answer_evidence_pages"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    answer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("answers.id", ondelete="CASCADE"), index=True
+    )
+    label: Mapped[str] = mapped_column(String(8))
+    rank: Mapped[int] = mapped_column(Integer)
+    score: Mapped[float] = mapped_column(Float)
+    chunk_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("chunks.id", ondelete="SET NULL"), index=True
+    )
+    paper_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("papers.id", ondelete="SET NULL"))
+    paper_title: Mapped[str] = mapped_column(Text)
+    arxiv_id: Mapped[str | None] = mapped_column(String(32))
+    arxiv_version: Mapped[int | None] = mapped_column(Integer)
+    page_start: Mapped[int] = mapped_column(Integer)
+    page_end: Mapped[int] = mapped_column(Integer)
+    text: Mapped[str] = mapped_column(Text)
+
+
+class AnswerCitation(Base):
+    """A label cited by a claim, with the server's validity verdict (FR-10)."""
+
+    __tablename__ = "answer_citations"
+    __table_args__ = (
+        UniqueConstraint(
+            "answer_id", "claim_index", "position", name="uq_answer_citations_position"
+        ),
+        CheckConstraint("claim_index >= 0 AND position >= 0", name="ck_answer_citations_index"),
+        CheckConstraint(
+            "valid = (evidence_id IS NOT NULL)", name="ck_answer_citations_valid_iff_linked"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    answer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("answers.id", ondelete="CASCADE"), index=True
+    )
+    claim_index: Mapped[int] = mapped_column(Integer)
+    position: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String(32))
+    valid: Mapped[bool] = mapped_column(Boolean)
+    evidence_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("answer_evidence.id", ondelete="CASCADE")
+    )
+
+    # Lets the unit of work insert evidence rows before the citations that reference them.
+    evidence: Mapped[AnswerEvidence | None] = relationship()

@@ -135,6 +135,53 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ query, top_k: topK }),
     }),
+  ask: (question: string) =>
+    request<QAAnswer>('/qa', { method: 'POST', body: JSON.stringify({ question }) }),
+}
+
+export interface QACitation {
+  label: string
+  /** True only if the label refers to a passage the model was actually given. */
+  valid: boolean
+}
+
+export interface QAClaim {
+  index: number
+  text: string
+  /** "cited": has at least one valid citation; semantic support is not verified. */
+  support: 'cited' | 'unsupported'
+  citations: QACitation[]
+}
+
+export interface QAEvidence {
+  label: string
+  rank: number
+  score: number
+  chunk_id: string | null
+  paper_id: string | null
+  paper_title: string
+  arxiv_id: string | null
+  arxiv_version: number | null
+  page_start: number
+  page_end: number
+  text: string
+}
+
+export interface QAAnswer {
+  id: string
+  query_id: string
+  question: string
+  status: 'answered' | 'insufficient_evidence' | 'error'
+  reason: string | null
+  claims: QAClaim[]
+  evidence: QAEvidence[]
+  generation_model: string | null
+  prompt_version: string
+  embedding_model: string
+  timings: { retrieval_ms: number | null; generation_ms: number | null; latency_ms: number }
+  prompt_tokens: number | null
+  completion_tokens: number | null
+  created_at: string
 }
 
 export function errorMessage(error: unknown): string {

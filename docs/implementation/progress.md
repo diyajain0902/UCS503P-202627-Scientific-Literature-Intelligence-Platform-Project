@@ -2,6 +2,56 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-08 — Milestone 2: Grounded Q&A (branch `feature/m2-grounded-qa`)
+
+**Approval:** M2, with the constraint "keep qwen2.5:3b" (no other models downloaded or compared).
+
+**Delivered:** generation provider interface + Ollama adapter (bounded options, warm-up, error mapping);
+prompt `qa-v1` with delimited, neutralised evidence and `P1..Pn` labels; constrained JSON schema; citation checker;
+three-point abstention; `POST /api/v1/qa`, `GET /api/v1/qa`, `GET /api/v1/qa/{id}`; migration `0002`
+(`queries`, `answers`, `answer_evidence`, `answer_citations`); Q&A page with citation chips, inspector,
+invalid/unsupported flags, insufficient-evidence notice; Ask / Search tabs. ADR-0006.
+
+**Defects found and fixed during M2:**
+1. Real-model test: the first prompt made qwen2.5:3b abstain on clearly answerable questions (0-1/4 on a synthetic
+   set). Cause: a trailing JSON-format hint line in the prompt. Removed; rules rewritten answer-first.
+2. Real paper passages: the model wrote labels and math fragments into claim text and looped to the 512-token
+   limit (HTTP 502); another claim's text was just `P1`. Fixed by schema order (citations before text), a label
+   pattern, a 300-character claim cap, and a server guard that drops label-only claims.
+3. A worked example in the prompt raised recall (5/6) but produced a cited, invented answer to an unanswerable
+   question; rejected (see ADR-0006 table).
+4. Persistence: citations were inserted before their evidence rows (FK violation), and empty collections were
+   lazy-loaded after the session closed. Fixed with an explicit relationship and assigned collections. Test DB
+   cleanup now truncates the Q&A tables.
+5. A shell heredoc wrote literal backspace bytes into a regex (`\b` became 0x08), silently disabling the
+   label-only guard. Caught by a manual spot check; file rewritten; repo scanned (no other occurrences);
+   regression test added.
+
+**Environment issue:** Docker builds failed with `invalid file request` because OneDrive keeps cloud reparse
+points on older files even when pinned (`attrib +P` was applied to the project and did not help). Verification
+used a `robocopy` of the working tree in `%TEMP%\slip-build` (same Compose project and volumes). Recommended fix:
+move the repository outside OneDrive (team decision).
+
+**Commands and results (local):**
+- Ruff, format, mypy strict (56 files) -> pass.
+- Unit: `pytest -m "not integration and not model and not network and not ollama"` -> **103 passed**.
+- Integration (Compose PostgreSQL 17 + pgvector 0.8.0): `pytest -m integration` -> **43 passed** (incl. 13 Q&A
+  tests and the `alembic check` drift test with migration 0002).
+- Real model: `pytest -m ollama` -> **3 passed** (answerable -> answered with a valid citation; unanswerable ->
+  abstains; instruction inside a passage not followed).
+- Frontend: lint, typecheck, build pass; `npm test` -> **13 passed** (5 files).
+
+**Real end-to-end smoke run** (Docker stack via nginx; corpus = 1706.03762v7 only; qwen2.5:3b warm, temperature 0,
+seed 0, num_ctx 4096; 8 questions written by the developer; not a labelled evaluation):
+- 5/6 answerable questions answered with valid citations: BLEU 28.4 (p. 8); scaling by 1/sqrt(d_k) (p. 4);
+  d_model 512 (p. 8, terse claim "dmodel 512"); 100,000 steps / 12 hours (p. 7); attention heads: cited p. 8, but
+  the claim describes varying the number of heads rather than stating 8 (valid citation, claim does not answer).
+- 1/6 abstained (optimizer). Verified retrieval miss: the passage containing "Adam" is not in the top 6.
+- 2/2 unanswerable questions abstained. No invented answers, no truncation.
+- Server-side latency 701-1686 ms per question (8 samples, model warm). Not a p95 measurement.
+- Browser: the Q&A page answered "How long was the base model trained?" with chip P1; the inspector showed the
+  p. 7 passage.
+
 ## 2026-10-08 — Milestone 1 closure: Docker verification on the reference machine
 
 **Setup by the team:** WSL 3.0.1 (manual MSI after `wsl --install` returned HTTP 403), VirtualMachinePlatform

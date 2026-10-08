@@ -64,6 +64,7 @@ markers = [
     "integration: requires PostgreSQL + pgvector (SLIP_TEST_DATABASE_URL)",
     "model: loads the real embedding model (downloads it on first use)",
     "network: calls the live arXiv API",
+    "ollama: calls the real local Ollama model (not run in CI)",
 ]
 
 [tool.uv]

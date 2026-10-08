@@ -8,22 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.container import Container
 from app.core.config import Settings
 from app.ingestion.chunking import ChunkingConfig
-from app.ingestion.storage import FileStore
 from app.main import create_app
-from app.services.corpus import CorpusService
-from app.services.ingestion import IngestionService
-from app.services.jobs import JobRunner
-from app.services.search import SearchService
-from tests.fakes import (
-    FakeArxiv,
-    HashingEmbedder,
-    WhitespaceTokenizer,
-    make_pdf,
-    synthetic_metadata,
-)
+from tests.fakes import FakeArxiv, make_pdf, make_test_container, synthetic_metadata
 
 pytestmark = pytest.mark.integration
 
@@ -45,25 +33,8 @@ def client(
     arxiv = FakeArxiv()
     arxiv.add(synthetic_metadata("2101.00001", title="Attention Paper"), make_pdf(ATTENTION))
     arxiv.add(synthetic_metadata("2101.00002", title="Graph Paper"), make_pdf(GRAPHS))
-    embedder = HashingEmbedder()
-    ingestion = IngestionService(
-        sessions,
-        arxiv,
-        embedder,
-        WhitespaceTokenizer,
-        FileStore(tmp_path),
-        ChunkingConfig(window_tokens=24, overlap_tokens=4),
-        max_pdf_bytes=5 * 1024 * 1024,
-        max_pdf_pages=10,
-    )
-    container = Container(
-        settings=settings,
-        session_factory=sessions,
-        embedder=embedder,
-        ingestion=ingestion,
-        search=SearchService(sessions, embedder, settings.search_max_top_k),
-        corpus=CorpusService(sessions),
-        runner=JobRunner(1, ingestion.run_job),
+    container = make_test_container(
+        settings, sessions, tmp_path, arxiv=arxiv, chunking=ChunkingConfig(24, 4)
     )
     with TestClient(create_app(container=container)) as test_client:
         yield test_client
