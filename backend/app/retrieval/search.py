@@ -1,7 +1,8 @@
 """Dense, BM25, and hybrid vector/text search over persisted chunks (FR-08, FR-24)."""
 
+import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
@@ -45,7 +46,11 @@ class ChunkHit:
     chunk: Chunk
     paper: Paper
     score: float
-    """Cosine similarity score or relevance score in [-1, 1]."""
+    """Cosine similarity between the query and chunk embeddings, in [-1, 1], in every search mode.
+    Evidence thresholds (``qa_min_score``) are calibrated on this value."""
+    rank_score: float | None = None
+    """Mode-specific ordering score: BM25 ``ts_rank_cd``, RRF score, or cross-encoder logit.
+    ``None`` for dense search, where ``score`` is the ordering score."""
 
 
 def search_chunks(
@@ -76,38 +81,48 @@ def search_chunks(
     ]
 
 
+_TERM = re.compile(r"\W+")
+
+
+def bm25_terms(query_text: str) -> list[str]:
+    """Reduce a query to alphanumeric terms that are safe inside a ``to_tsquery`` OR expression."""
+    terms = (_TERM.sub("", word) for word in query_text.split())
+    return [term for term in terms if len(term) > 1]
+
+
 def search_bm25_chunks(
     session: Session,
     query_text: str,
+    query_vector: list[float],
     top_k: int,
     paper_ids: list[uuid.UUID] | None = None,
 ) -> list[ChunkHit]:
-    """Sparse full-text BM25 search using PostgreSQL tsvector and to_tsquery."""
-    import re
-
-    terms = [re.sub(r"\W+", "", w) for w in query_text.split() if len(re.sub(r"\W+", "", w)) > 1]
+    """Sparse full-text search ranked by ``ts_rank_cd`` over the stored ``text_tsv`` column
+    (GIN-indexed, migration 0006). Each hit also carries its cosine similarity (``score``).
+    """
+    terms = bm25_terms(query_text)
     if terms:
-        or_expr = " | ".join(terms)
-        tsquery = func.to_tsquery("english", or_expr)
+        tsquery = func.to_tsquery("english", " | ".join(terms))
     else:
         tsquery = func.websearch_to_tsquery("english", query_text)
 
-    tsvector = func.to_tsvector("english", Chunk.text)
-    rank = func.ts_rank_cd(tsvector, tsquery).label("rank")
-
+    rank = func.ts_rank_cd(Chunk.text_tsv, tsquery).label("rank")
+    distance = Chunk.embedding.cosine_distance(query_vector).label("distance")
     statement = (
-        select(Chunk, Paper, rank)
+        select(Chunk, Paper, rank, distance)
         .join(Document, Chunk.document_id == Document.id)
         .join(Paper, Document.paper_id == Paper.id)
-        .where(tsvector.op("@@")(tsquery))
+        .where(Chunk.text_tsv.op("@@")(tsquery))
         .order_by(rank.desc(), Chunk.id)
         .limit(top_k)
     )
     if paper_ids:
         statement = statement.where(Paper.id.in_(paper_ids))
 
-    results = session.execute(statement).all()
-    return [ChunkHit(chunk=chunk, paper=paper, score=float(r)) for chunk, paper, r in results]
+    return [
+        ChunkHit(chunk=chunk, paper=paper, score=1.0 - float(dist), rank_score=float(r))
+        for chunk, paper, r, dist in session.execute(statement).all()
+    ]
 
 
 def search_hybrid_chunks(
@@ -121,24 +136,21 @@ def search_hybrid_chunks(
     dense_weight: float = 1.0,
     sparse_weight: float = 1.0,
 ) -> list[ChunkHit]:
-    """Hybrid search combining dense HNSW and BM25 FTS with Reciprocal Rank Fusion (RRF) (FR-24)."""
+    """Hybrid search combining dense HNSW and BM25 FTS with Reciprocal Rank Fusion (RRF) (FR-24).
+
+    Hits are ordered by RRF score (``rank_score``, ties broken by chunk ID); ``score`` stays the
+    cosine similarity so evidence thresholds mean the same thing in every mode.
+    """
     dense_hits = search_chunks(session, query_vector, candidate_k, paper_ids)
-    bm25_hits = search_bm25_chunks(session, query_text, candidate_k, paper_ids)
+    bm25_hits = search_bm25_chunks(session, query_text, query_vector, candidate_k, paper_ids)
 
     rrf_scores: dict[uuid.UUID, float] = {}
     hit_map: dict[uuid.UUID, ChunkHit] = {}
+    for hits, weight in ((dense_hits, dense_weight), (bm25_hits, sparse_weight)):
+        for rank_idx, hit in enumerate(hits, start=1):
+            cid = hit.chunk.id
+            hit_map.setdefault(cid, hit)
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + weight / (rrf_k + rank_idx)
 
-    for rank_idx, hit in enumerate(dense_hits, start=1):
-        cid = hit.chunk.id
-        hit_map[cid] = hit
-        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (dense_weight / (rrf_k + rank_idx))
-
-    for rank_idx, hit in enumerate(bm25_hits, start=1):
-        cid = hit.chunk.id
-        if cid not in hit_map:
-            hit_map[cid] = hit
-        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (sparse_weight / (rrf_k + rank_idx))
-
-    sorted_chunk_ids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
-
-    return [hit_map[cid] for cid in sorted_chunk_ids[:top_k]]
+    ordered = sorted(rrf_scores, key=lambda cid: (-rrf_scores[cid], str(cid)))
+    return [replace(hit_map[cid], rank_score=rrf_scores[cid]) for cid in ordered[:top_k]]

@@ -55,7 +55,14 @@ def _git() -> dict[str, Any]:
             [git, *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
         ).stdout.strip()
 
-    return {"commit": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain"))}
+    # ``dirty`` covers tracked files only; untracked files (e.g. earlier run records) cannot change
+    # the code that ran, so they are counted separately.
+    untracked = run("ls-files", "--others", "--exclude-standard")
+    return {
+        "commit": run("rev-parse", "HEAD"),
+        "dirty": bool(run("status", "--porcelain", "--untracked-files=no")),
+        "untracked_files": len(untracked.splitlines()),
+    }
 
 
 def _power_source() -> str:
@@ -169,8 +176,7 @@ def run_retrieval(
     return {
         "config": {
             "top_k": top_k,
-            "search_mode": mode,
-            "embedding_model": search.embedding_model,
+            **search.describe(mode),
             "chunker_versions": _chunker_versions(sessions),
         },
         "metrics": metrics,

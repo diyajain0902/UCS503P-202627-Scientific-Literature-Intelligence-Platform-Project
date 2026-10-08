@@ -21,9 +21,13 @@ Each milestone lands on its own branch(es) and merges to `main` via PR after the
 
 1. ~~Approve ADR-0003~~ — approved 2026-10-08.
 2. ~~Install Docker Desktop~~ — done 2026-10-08; `docker compose up` verified.
-3. Choose the eval-corpus domain (proposal suggests NLP) and who labels questions (M3; labels must be human).
+3. ~~Choose the eval-corpus domain~~ — NLP; labels written by the AI assistant (ADR-0007). Human review of a sample is still open.
 4. Whether to amend the course proposal for ADR-0001 (Gemini → Ollama).
+5. Least-privilege DB role (security S1) and PDF parse timeout (S2).
+6. Default retrieval mode: `hybrid_rerank` (recall) vs. `hybrid` (latency); NFR-03 is not met either way yet.
 
 ## Status
 
-- M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done (PR #5) · M3 done (PR #6) · M4 done (PR #7) · M5 done (PR #8) · M6 done (`feature/m6-retrieval-optimization`, pending merge to `main`).
+- M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done (PR #5) · M3 done (PR #6) · M4 done (PR #7) · M5 done (PR #8) · M6 done (PR #9; defects fixed in M7) · M7 delivered on `feature/m7-release-readiness`, awaiting approval.
+- Protocol audits (done late, in M7): step 4 RAG evaluation, step 5a security and privacy (first pass), step 6 CI/CD and reproducibility, in `docs/audits/`. Remaining: step 5b (security second pass) and step 7 (final acceptance).
+- Deviation: the M6 small-to-big chunking experiment was not run (deferred; `docs/handover.md` §4).

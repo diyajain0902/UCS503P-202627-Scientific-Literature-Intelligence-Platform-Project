@@ -28,6 +28,7 @@ services:
       SLIP_STORAGE_DIR: /data/storage
       SLIP_OLLAMA_BASE_URL: http://host.docker.internal:11434
       SLIP_OLLAMA_MODEL: ${SLIP_OLLAMA_MODEL:-qwen2.5:3b}
+      SLIP_SEARCH_MODE: ${SLIP_SEARCH_MODE:-hybrid_rerank}
       SLIP_CORS_ORIGINS: '["http://localhost:8080"]'
       HF_HOME: /models
     volumes:

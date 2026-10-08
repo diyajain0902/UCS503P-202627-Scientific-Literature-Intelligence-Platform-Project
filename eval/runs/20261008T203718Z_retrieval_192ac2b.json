@@ -1,0 +1,2889 @@
+{
+  "kind": "retrieval",
+  "started_at": "2026-10-08T20:37:10.560335+00:00",
+  "dataset": {
+    "name": "nlp-core-qa",
+    "version": "1",
+    "path": "eval/qa_v1.json",
+    "sha256": "b0fc0f6dd4f6215fdbb8cfad5884e925de47ee97d2958224e20e6e7505142bbd",
+    "items": 50,
+    "answerable": 40,
+    "unanswerable": 10,
+    "labelers": [
+      "ai-assistant"
+    ],
+    "human_reviewed_items": 0
+  },
+  "corpus_manifest": {
+    "path": "eval/corpus.json",
+    "sha256": "6f5c0efa067f8a1439e6aae2d73786dcd4c834e62f0066d8df8d626759d02775"
+  },
+  "git": {
+    "commit": "192ac2b9241a95fce3c3f218283f584055336017",
+    "dirty": true
+  },
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "python": "3.12.13",
+    "power_source": "ac"
+  },
+  "config": {
+    "top_k": 10,
+    "search_mode": "dense",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "chunker_versions": [
+      "tokwin-v1|sentence-transformers/all-MiniLM-L6-v2|w256|o38"
+    ]
+  },
+  "metrics": {
+    "recall@1": 0.2,
+    "recall@5": 0.7,
+    "recall@10": 0.775,
+    "mrr": 0.41576388888888893,
+    "search_ms_p50": 46.4,
+    "search_ms_p95": 52.7
+  },
+  "items": [
+    {
+      "id": "q001",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.62928,
+      "relevant_scores": [
+        0.62928,
+        0.482182
+      ],
+      "top": [
+        {
+          "arxiv_id": "1706.03762",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.62928,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1706.03762",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.513098,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.499397,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.485606,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1706.03762",
+          "pages": [
+            4,
+            5
+          ],
+          "score": 0.482182,
+          "relevant": true
+        }
+      ],
+      "search_ms": 5399.5
+    },
+    {
+      "id": "q002",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.457535,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1706.03762",
+          "pages": [
+            7,
+            8
+          ],
+          "score": 0.457535,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            8,
+            9
+          ],
+          "score": 0.435912,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.434863,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            1,
+            2
+          ],
+          "score": 0.433102,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.426117,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.1
+    },
+    {
+      "id": "q003",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.725051,
+      "relevant_scores": [
+        0.705502,
+        0.667887,
+        0.649439
+      ],
+      "top": [
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.725051,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            12,
+            13
+          ],
+          "score": 0.705502,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            16,
+            16
+          ],
+          "score": 0.686027,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.677817,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.668908,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.3
+    },
+    {
+      "id": "q004",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.65833,
+      "relevant_scores": [
+        0.653376
+      ],
+      "top": [
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.65833,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.653376,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            11,
+            11
+          ],
+          "score": 0.600507,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            37,
+            37
+          ],
+          "score": 0.596472,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.575151,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.4
+    },
+    {
+      "id": "q005",
+      "kind": "answerable",
+      "first_relevant_rank": 4,
+      "top_score": 0.498989,
+      "relevant_scores": [
+        0.451806
+      ],
+      "top": [
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            13,
+            13
+          ],
+          "score": 0.498989,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.47052,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.457066,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.451806,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            12,
+            13
+          ],
+          "score": 0.438403,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.0
+    },
+    {
+      "id": "q006",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.554321,
+      "relevant_scores": [
+        0.498001
+      ],
+      "top": [
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.554321,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.498001,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            16,
+            16
+          ],
+          "score": 0.493885,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.489969,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.481151,
+          "relevant": false
+        }
+      ],
+      "search_ms": 42.2
+    },
+    {
+      "id": "q007",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.586858,
+      "relevant_scores": [
+        0.565094,
+        0.484329
+      ],
+      "top": [
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.586858,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.565094,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.560255,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.552226,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.542724,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.6
+    },
+    {
+      "id": "q008",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.546572,
+      "relevant_scores": [
+        0.546572,
+        0.511134,
+        0.507787
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            13,
+            13
+          ],
+          "score": 0.546572,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            22,
+            22
+          ],
+          "score": 0.53051,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            22,
+            22
+          ],
+          "score": 0.528047,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            22,
+            23
+          ],
+          "score": 0.524529,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            23,
+            23
+          ],
+          "score": 0.511134,
+          "relevant": true
+        }
+      ],
+      "search_ms": 50.2
+    },
+    {
+      "id": "q009",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.518292,
+      "relevant_scores": [
+        0.518292
+      ],
+      "top": [
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.518292,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.513655,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            20,
+            20
+          ],
+          "score": 0.494282,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            46,
+            46
+          ],
+          "score": 0.491024,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            24,
+            25
+          ],
+          "score": 0.486699,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.0
+    },
+    {
+      "id": "q010",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.496351,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.496351,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.476885,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            20,
+            20
+          ],
+          "score": 0.46212,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.459279,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            8,
+            9
+          ],
+          "score": 0.429306,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.1
+    },
+    {
+      "id": "q011",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.59053,
+      "relevant_scores": [
+        0.59053,
+        0.503144
+      ],
+      "top": [
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.59053,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            7,
+            8
+          ],
+          "score": 0.586939,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.569056,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.511898,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.503144,
+          "relevant": true
+        }
+      ],
+      "search_ms": 44.1
+    },
+    {
+      "id": "q012",
+      "kind": "answerable",
+      "first_relevant_rank": 4,
+      "top_score": 0.657904,
+      "relevant_scores": [
+        0.607939
+      ],
+      "top": [
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.657904,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.637557,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.624166,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.607939,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            10,
+            11
+          ],
+          "score": 0.595304,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.2
+    },
+    {
+      "id": "q013",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.624522,
+      "relevant_scores": [
+        0.624522,
+        0.591926,
+        0.586624
+      ],
+      "top": [
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            1,
+            2
+          ],
+          "score": 0.624522,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.591926,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.590768,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.586624,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.583098,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.2
+    },
+    {
+      "id": "q014",
+      "kind": "answerable",
+      "first_relevant_rank": 9,
+      "top_score": 0.579801,
+      "relevant_scores": [
+        0.52937
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.579801,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            45,
+            46
+          ],
+          "score": 0.565977,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.545669,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.544067,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.542179,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.4
+    },
+    {
+      "id": "q015",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.697912,
+      "relevant_scores": [
+        0.679002
+      ],
+      "top": [
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.697912,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.679002,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.664909,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            4,
+            5
+          ],
+          "score": 0.65197,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.647294,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.3
+    },
+    {
+      "id": "q016",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.682469,
+      "relevant_scores": [
+        0.68225,
+        0.627248,
+        0.61997
+      ],
+      "top": [
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.682469,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.68225,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.640863,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.629566,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.627248,
+          "relevant": true
+        }
+      ],
+      "search_ms": 50.6
+    },
+    {
+      "id": "q017",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.626436,
+      "relevant_scores": [
+        0.626436,
+        0.620513,
+        0.583707
+      ],
+      "top": [
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.626436,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.620513,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.583707,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            1,
+            2
+          ],
+          "score": 0.579575,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.569698,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.5
+    },
+    {
+      "id": "q018",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.548922,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.548922,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.533596,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            14,
+            14
+          ],
+          "score": 0.499009,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.489978,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.489627,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.7
+    },
+    {
+      "id": "q019",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.43871,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.43871,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.424485,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            15,
+            15
+          ],
+          "score": 0.415814,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.405222,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.40367,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.4
+    },
+    {
+      "id": "q020",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.704896,
+      "relevant_scores": [
+        0.679359,
+        0.545646
+      ],
+      "top": [
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.704896,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            4,
+            5
+          ],
+          "score": 0.679359,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            4,
+            5
+          ],
+          "score": 0.653641,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.638335,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.615125,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.6
+    },
+    {
+      "id": "q021",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.656222,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.656222,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.622972,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.558271,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.532618,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.52948,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.0
+    },
+    {
+      "id": "q022",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.709685,
+      "relevant_scores": [
+        0.687563,
+        0.672611
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.709685,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.687563,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.672611,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.638566,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.609203,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.5
+    },
+    {
+      "id": "q023",
+      "kind": "answerable",
+      "first_relevant_rank": 4,
+      "top_score": 0.583549,
+      "relevant_scores": [
+        0.529022,
+        0.487496
+      ],
+      "top": [
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.583549,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.548264,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.53239,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.529022,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.487496,
+          "relevant": true
+        }
+      ],
+      "search_ms": 49.3
+    },
+    {
+      "id": "q024",
+      "kind": "answerable",
+      "first_relevant_rank": 4,
+      "top_score": 0.611495,
+      "relevant_scores": [
+        0.558192,
+        0.502564
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            26,
+            26
+          ],
+          "score": 0.611495,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.610948,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.569505,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            19,
+            19
+          ],
+          "score": 0.558192,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            9,
+            10
+          ],
+          "score": 0.54207,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.9
+    },
+    {
+      "id": "q025",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.777413,
+      "relevant_scores": [
+        0.703736,
+        0.684107,
+        0.648742
+      ],
+      "top": [
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.777413,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.703736,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.684107,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.675466,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.664904,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.2
+    },
+    {
+      "id": "q026",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.575885,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            13,
+            13
+          ],
+          "score": 0.575885,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.572041,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.562672,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.562423,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2004.04906",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.55865,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.6
+    },
+    {
+      "id": "q027",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.71655,
+      "relevant_scores": [
+        0.71655,
+        0.685095,
+        0.670606,
+        0.624843
+      ],
+      "top": [
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            8,
+            9
+          ],
+          "score": 0.71655,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.685095,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            1,
+            2
+          ],
+          "score": 0.670606,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.664654,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.663939,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.2
+    },
+    {
+      "id": "q028",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.68439,
+      "relevant_scores": [
+        0.637302
+      ],
+      "top": [
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.68439,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.637302,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.615739,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.615628,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.60236,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.1
+    },
+    {
+      "id": "q029",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.562029,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.562029,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.550205,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.547494,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.542879,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.540574,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.5
+    },
+    {
+      "id": "q030",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.480956,
+      "relevant_scores": [
+        0.469645,
+        0.43232
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            34,
+            35
+          ],
+          "score": 0.480956,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.469645,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            13,
+            14
+          ],
+          "score": 0.460313,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.448139,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            15,
+            15
+          ],
+          "score": 0.444572,
+          "relevant": false
+        }
+      ],
+      "search_ms": 52.7
+    },
+    {
+      "id": "q031",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.477102,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.477102,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.454281,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.436965,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.428574,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.40971,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.7
+    },
+    {
+      "id": "q032",
+      "kind": "answerable",
+      "first_relevant_rank": 8,
+      "top_score": 0.54712,
+      "relevant_scores": [
+        0.422545
+      ],
+      "top": [
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.54712,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.456864,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.453808,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.451184,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.441351,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.1
+    },
+    {
+      "id": "q033",
+      "kind": "answerable",
+      "first_relevant_rank": 9,
+      "top_score": 0.666549,
+      "relevant_scores": [
+        0.543446
+      ],
+      "top": [
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            12,
+            13
+          ],
+          "score": 0.666549,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.640807,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            14,
+            14
+          ],
+          "score": 0.574963,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.569574,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.565546,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.2
+    },
+    {
+      "id": "q034",
+      "kind": "answerable",
+      "first_relevant_rank": 1,
+      "top_score": 0.703375,
+      "relevant_scores": [
+        0.703375
+      ],
+      "top": [
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.703375,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            20,
+            20
+          ],
+          "score": 0.640313,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.618153,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            21,
+            21
+          ],
+          "score": 0.605055,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            19,
+            20
+          ],
+          "score": 0.601642,
+          "relevant": false
+        }
+      ],
+      "search_ms": 53.7
+    },
+    {
+      "id": "q035",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.652818,
+      "relevant_scores": [
+        0.643167,
+        0.575445
+      ],
+      "top": [
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.652818,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.643167,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1409.0473",
+          "pages": [
+            4,
+            5
+          ],
+          "score": 0.628396,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            10,
+            11
+          ],
+          "score": 0.626162,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.62086,
+          "relevant": false
+        }
+      ],
+      "search_ms": 52.2
+    },
+    {
+      "id": "q036",
+      "kind": "answerable",
+      "first_relevant_rank": null,
+      "top_score": 0.589037,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.589037,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.540245,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.535961,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.51767,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.514489,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.6
+    },
+    {
+      "id": "q037",
+      "kind": "answerable",
+      "first_relevant_rank": 2,
+      "top_score": 0.661469,
+      "relevant_scores": [
+        0.652386,
+        0.648441,
+        0.603165
+      ],
+      "top": [
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.661469,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.652386,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.648441,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.638926,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.616066,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.1
+    },
+    {
+      "id": "q038",
+      "kind": "answerable",
+      "first_relevant_rank": 4,
+      "top_score": 0.646593,
+      "relevant_scores": [
+        0.538091,
+        0.523404,
+        0.50395
+      ],
+      "top": [
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            5,
+            6
+          ],
+          "score": 0.646593,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.571078,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            10,
+            11
+          ],
+          "score": 0.538863,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.538091,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.523404,
+          "relevant": true
+        }
+      ],
+      "search_ms": 46.8
+    },
+    {
+      "id": "q039",
+      "kind": "answerable",
+      "first_relevant_rank": 3,
+      "top_score": 0.564205,
+      "relevant_scores": [
+        0.485516
+      ],
+      "top": [
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.564205,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.488692,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.485516,
+          "relevant": true
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.482678,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.46778,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.6
+    },
+    {
+      "id": "q040",
+      "kind": "answerable",
+      "first_relevant_rank": 5,
+      "top_score": 0.381707,
+      "relevant_scores": [
+        0.347023
+      ],
+      "top": [
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.381707,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.358226,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.356763,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1802.05365",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.347454,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.347023,
+          "relevant": true
+        }
+      ],
+      "search_ms": 45.1
+    },
+    {
+      "id": "q041",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.392579,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            11,
+            11
+          ],
+          "score": 0.392579,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.384331,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.350496,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.296472,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.13461",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.294529,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.8
+    },
+    {
+      "id": "q042",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.541578,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            2,
+            3
+          ],
+          "score": 0.541578,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.514349,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.479548,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            18,
+            18
+          ],
+          "score": 0.469985,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.448779,
+          "relevant": false
+        }
+      ],
+      "search_ms": 49.7
+    },
+    {
+      "id": "q043",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.533529,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            21,
+            21
+          ],
+          "score": 0.533529,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            4,
+            4
+          ],
+          "score": 0.503126,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            20,
+            20
+          ],
+          "score": 0.477174,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.465599,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            23,
+            23
+          ],
+          "score": 0.449923,
+          "relevant": false
+        }
+      ],
+      "search_ms": 49.3
+    },
+    {
+      "id": "q044",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.479128,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            7,
+            8
+          ],
+          "score": 0.479128,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            26,
+            26
+          ],
+          "score": 0.450991,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            46,
+            46
+          ],
+          "score": 0.450263,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            6,
+            6
+          ],
+          "score": 0.444442,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            19,
+            20
+          ],
+          "score": 0.440872,
+          "relevant": false
+        }
+      ],
+      "search_ms": 45.5
+    },
+    {
+      "id": "q045",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.43715,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            13,
+            14
+          ],
+          "score": 0.43715,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.391568,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.377327,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            13,
+            13
+          ],
+          "score": 0.371254,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            15,
+            16
+          ],
+          "score": 0.359302,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.7
+    },
+    {
+      "id": "q046",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.382964,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.382964,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.327596,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            8,
+            8
+          ],
+          "score": 0.301358,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.11401",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.29431,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2106.09685",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.282566,
+          "relevant": false
+        }
+      ],
+      "search_ms": 46.9
+    },
+    {
+      "id": "q047",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.577292,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1607.01759",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.577292,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1508.07909",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.517836,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1409.3215",
+          "pages": [
+            5,
+            5
+          ],
+          "score": 0.508373,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1301.3781",
+          "pages": [
+            1,
+            1
+          ],
+          "score": 0.494873,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            14,
+            14
+          ],
+          "score": 0.491738,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.8
+    },
+    {
+      "id": "q048",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.565408,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.565408,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1908.10084",
+          "pages": [
+            11,
+            11
+          ],
+          "score": 0.554494,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1810.04805",
+          "pages": [
+            14,
+            14
+          ],
+          "score": 0.554378,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            2,
+            2
+          ],
+          "score": 0.540996,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1906.08237",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.540815,
+          "relevant": false
+        }
+      ],
+      "search_ms": 48.1
+    },
+    {
+      "id": "q049",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.349685,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            16,
+            16
+          ],
+          "score": 0.349685,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            15,
+            15
+          ],
+          "score": 0.348113,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            6,
+            7
+          ],
+          "score": 0.323707,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1909.11942",
+          "pages": [
+            9,
+            9
+          ],
+          "score": 0.309159,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1907.11692",
+          "pages": [
+            7,
+            7
+          ],
+          "score": 0.307216,
+          "relevant": false
+        }
+      ],
+      "search_ms": 47.0
+    },
+    {
+      "id": "q050",
+      "kind": "unanswerable",
+      "first_relevant_rank": null,
+      "top_score": 0.375678,
+      "relevant_scores": [],
+      "top": [
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            4
+          ],
+          "score": 0.375678,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.01108",
+          "pages": [
+            3,
+            3
+          ],
+          "score": 0.369874,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2302.13971",
+          "pages": [
+            10,
+            10
+          ],
+          "score": 0.355499,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "2005.14165",
+          "pages": [
+            39,
+            39
+          ],
+          "score": 0.353897,
+          "relevant": false
+        },
+        {
+          "arxiv_id": "1910.10683",
+          "pages": [
+            57,
+            57
+          ],
+          "score": 0.35002,
+          "relevant": false
+        }
+      ],
+      "search_ms": 44.9
+    }
+  ]
+}

@@ -1,0 +1,930 @@
+{
+  "kind": "qa",
+  "started_at": "2026-10-08T20:42:13.699737+00:00",
+  "dataset": {
+    "name": "nlp-core-qa",
+    "version": "1",
+    "path": "eval/qa_v1.json",
+    "sha256": "b0fc0f6dd4f6215fdbb8cfad5884e925de47ee97d2958224e20e6e7505142bbd",
+    "items": 50,
+    "answerable": 40,
+    "unanswerable": 10,
+    "labelers": [
+      "ai-assistant"
+    ],
+    "human_reviewed_items": 0
+  },
+  "corpus_manifest": {
+    "path": "eval/corpus.json",
+    "sha256": "6f5c0efa067f8a1439e6aae2d73786dcd4c834e62f0066d8df8d626759d02775"
+  },
+  "git": {
+    "commit": "b173e72bd32740df8d5804a5579dcfaef28f369a",
+    "dirty": false,
+    "untracked_files": 1
+  },
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "python": "3.12.13",
+    "power_source": "ac"
+  },
+  "config": {
+    "default_top_k": 6,
+    "min_score": 0.3,
+    "max_context_chars": 12000,
+    "generation_model": "qwen2.5:3b",
+    "generation_options": {
+      "num_ctx": 4096,
+      "num_predict": 512,
+      "temperature": 0.0,
+      "seed": 0
+    },
+    "prompt_version": "qa-v1",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "retrieval": {
+      "search_mode": "hybrid_rerank",
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "rrf_k": 60,
+      "candidate_multiplier": 4,
+      "dense_weight": 1.0,
+      "sparse_weight": 1.0,
+      "reranker_model": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    }
+  },
+  "metrics": {
+    "answer_rate_answerable": 0.875,
+    "cited_relevant_rate_answerable": 0.725,
+    "cited_relevant_rate_of_answered": 0.8285714285714286,
+    "abstention_recall": 0.9,
+    "abstention_precision": 0.6428571428571429,
+    "false_answer_rate_unanswerable": 0.1,
+    "citation_validity_rate": 1.0,
+    "errors": 0,
+    "groundedness": {
+      "judge_prompt_version": "judge-v1",
+      "claims_judged": 37,
+      "unusable_verdicts": 0,
+      "supported_rate": 0.8378378378378378,
+      "partially_supported_rate": 0.08108108108108109,
+      "not_supported_rate": 0.08108108108108109,
+      "limitations": "Self-judged by the answering model; not human-validated."
+    },
+    "latency_ms_p50_warm": 3103.8,
+    "latency_ms_p95_warm": 4498.0,
+    "latency_ms_max": 10630.3,
+    "cold_start_latency_ms": [
+      12008.4,
+      9483.0,
+      8435.6
+    ]
+  },
+  "items": [
+    {
+      "id": "q001",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "In this work we employ h = 8 parallel attention layers, or heads."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 10630.3,
+      "wall_ms": 10717.7,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q002",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "Our models are trained using the AdamW optimizer (Loshchilov and Hutter, 2017), with the following hyper-parameters: β1 = 0.9, β2 = 0.95."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 3450.8,
+      "wall_ms": 3476.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q003",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "BERT uniformly selects 15% of the input tokens for possible replacement."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 2825.8,
+      "wall_ms": 2854.1,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q004",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "BERTBASE (L=12, H=768, A=12, Total Parameters=110M)"
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3141.5,
+      "wall_ms": 3166.0,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q005",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We pretrain RoBERTa over the combined data with the same number of training steps as before (100K). In total, we pretrain over 160GB of text."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3298.8,
+      "wall_ms": 3321.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q006",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "To avoid using the same mask for each training instance in every epoch, training data was duplicated 10 times so that each sequence is masked in 10 different ways over the 40 epochs of training."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3302.5,
+      "wall_ms": 3327.0,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q007",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "we introduce the “Colossal Clean Crawled Corpus” (C4), a data set consisting of hundreds of gigabytes of clean English text scraped from the web."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 5,
+      "latency_ms": 3509.4,
+      "wall_ms": 3537.5,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q008",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "In a denoising objective, the model is trained to predict missing or otherwise corrupted tokens in the input. In our baseline, we replace each consecutive span of corrupted tokens with a single sentinel token."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3425.6,
+      "wall_ms": 3451.4,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q009",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "175.0B"
+      ],
+      "citations_total": 3,
+      "citations_valid": 3,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 2908.2,
+      "wall_ms": 2937.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q010",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "The context window length, in tokens, that the GPT-3 models use is 2048."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3044.0,
+      "wall_ms": 3074.0,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q011",
+      "kind": "answerable",
+      "status": "insufficient_evidence",
+      "reason": "The model's answer cited no passage it was given, so it was withheld as unsupported.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 2463.5,
+      "wall_ms": 2485.5,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q012",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "it takes less than a day to learn high quality word vectors from a 1.6 billion words data set."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 2974.2,
+      "wall_ms": 2998.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q013",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "indeed the performance of a basic encoder–decoder deteriorates rapidly as the length of an input sentence increases. In order to address this issue, we introduce an extension to the encoder–decoder model which learns to align and translate jointly."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3406.1,
+      "wall_ms": 3432.8,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q014",
+      "kind": "answerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 2417.4,
+      "wall_ms": 2436.2,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q015",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We were surprised by the extent of the improvement obtained by reversing the words in the source sentences. We conclude that it is important to find a problem encoding that has the greatest number of short term dependencies, as they make the learning problem much simpler. In particular, while we was"
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3587.2,
+      "wall_ms": 3612.1,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q016",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "On the WMT’14 English to French translation task, we obtained a BLEU score of 34.81 by directly extracting translations from an ensemble of 5 deep LSTMs (with 384M parameters and 8,000 dimensional state each) using a simple left-to-right beam-search decoder."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3854.3,
+      "wall_ms": 3879.1,
+      "claim_verdicts": [
+        "not_supported"
+      ]
+    },
+    {
+      "id": "q017",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "For each token tk, a L-layer biLM computes a set of 2L + 1 representations Rk = {xLMk, −→hLMk,j, ←−hLMk,j | j = 1, . . . , L} = {hLMk,j | j = 0, . . . , L}, where hLMk,0 is the token layer and hLMk,j = [−→hLMk,j; ←−hLMk,j], for each biLSTM layer."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 4262.7,
+      "wall_ms": 4313.8,
+      "claim_verdicts": [
+        "partially_supported"
+      ]
+    },
+    {
+      "id": "q018",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "ELMo is a task specific combination of the intermediate layer representations in the biLM. For each token tk, a L-layer biLM computes a set of 2L + 1 representations Rk = {xLMk, −→hLMk,j, ←−hLMk,j | j = 1, . . . , L} = {hLMk,j | j = 0, . . . , L}, where hLMk,0 is the token layer and hLMk,j = [−→hLMk"
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 4643.0,
+      "wall_ms": 4669.2,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q019",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "ALBERT incorporates two parameter reduction techniques that lift the major obstacles in scaling pre-trained models."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3088.8,
+      "wall_ms": 3115.9,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q020",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We propose a loss based primarily on coherence. That is, for ALBERT, we use a sentence-order pre-diction (SOP) loss, which avoids topic prediction and instead focuses on modeling inter-sentence coherence."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3462.7,
+      "wall_ms": 3485.4,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q021",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "DistilBERT has 40% fewer parameters than BERT and is 60% faster than BERT."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3096.0,
+      "wall_ms": 3117.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q022",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "DistilBERT retains 97% of BERT's language understanding capabilities."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3035.7,
+      "wall_ms": 3060.8,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q023",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "The RAG-Sequence model uses the same retrieved document to generate the complete sequence, while the RAG-Token model can predict each target token based on a different document."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 4047.4,
+      "wall_ms": 4077.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q024",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "Each Wikipedia article is split into disjoint 100-word chunks, to make a total of 21M documents."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3449.2,
+      "wall_ms": 3473.6,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q025",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "Finally, we explore in-batch negative training with additional “hard” negative passages that have high BM25 scores given the question, but do not contain the answer string (the bottom block). These additional passages are used as negative passages for all questions in the same batch."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3763.3,
+      "wall_ms": 3788.4,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q026",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "By leveraging the now standard BERT pretrained model (Devlin et al., 2019) and a dual-encoder architecture (Bromley et al., 1994), we focus on developing the right training scheme using a relatively small number of question and passage pairs."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 3689.8,
+      "wall_ms": 3717.3,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q027",
+      "kind": "answerable",
+      "status": "insufficient_evidence",
+      "reason": "The model's answer cited no passage it was given, so it was withheld as unsupported.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 2549.3,
+      "wall_ms": 2570.0,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q028",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We experiment with three pool-\ning strategies: Using the output of the CLS-token, computing the mean of all output vectors (MEAN-strategy), and computing a max-over-time of the output vectors (MAX-strategy). The default configuration is MEAN."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3551.6,
+      "wall_ms": 3577.4,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q029",
+      "kind": "answerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 2477.2,
+      "wall_ms": 2502.6,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q030",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "we train on 512 TPU v3 chips for 500K steps with an Adam weight decay optimizer, linear learning rate decay, and a batch size of 8192, which takes about 5.5 days."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 5,
+      "latency_ms": 3359.6,
+      "wall_ms": 3396.1,
+      "claim_verdicts": [
+        "partially_supported"
+      ]
+    },
+    {
+      "id": "q031",
+      "kind": "answerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": false,
+      "evidence_count": 5,
+      "latency_ms": 2249.6,
+      "wall_ms": 2269.9,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q032",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "The BART models with text inﬁlling demonstrate the most consistently strong performance."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 5,
+      "latency_ms": 2723.0,
+      "wall_ms": 2745.8,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q033",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "LoRA freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks."
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 3212.9,
+      "wall_ms": 3240.1,
+      "claim_verdicts": [
+        "not_supported"
+      ]
+    },
+    {
+      "id": "q034",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "LoRA can reduce the number of trainable parameters by 10,000 times and the GPU memory requirement by 3 times."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3271.5,
+      "wall_ms": 3294.8,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q035",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "we show that linear models with a rank constraint and a fast loss approximation can train on a billion words within ten minutes"
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3118.7,
+      "wall_ms": 3141.9,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q036",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "Both models achieve a similar performance with a small hidden layer, but adding bi-grams gives us a significant boost in accuracy."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": false,
+      "evidence_count": 6,
+      "latency_ms": 3103.8,
+      "wall_ms": 3130.0,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q037",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We adapt this algorithm for word segmentation."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3083.0,
+      "wall_ms": 3109.7,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q038",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "The subword NMT approach deals with rare and unknown words by encoding them as sequences of subword units. This is based on the intuition that various word classes are translatable via smaller units than words, for instance names (via character copying or transliteration), compounds (via composi- t-"
+      ],
+      "citations_total": 2,
+      "citations_valid": 2,
+      "cited_relevant": true,
+      "evidence_count": 6,
+      "latency_ms": 3825.9,
+      "wall_ms": 3855.4,
+      "claim_verdicts": [
+        "supported"
+      ]
+    },
+    {
+      "id": "q039",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "We use 2, 000 warmup steps, and vary the learning rate and batch size with the size of the model (see Figure 1). All models are trained with a batch size of 4M tokens. The larger models were trained on 1.4T tokens."
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": true,
+      "evidence_count": 5,
+      "latency_ms": 3554.3,
+      "wall_ms": 3578.7,
+      "claim_verdicts": [
+        "partially_supported"
+      ]
+    },
+    {
+      "id": "q040",
+      "kind": "answerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "To improve the training stability, we normalize the input of each transformer sub-layer, instead of normalizing the output. We use the RMSNorm normalizing function, introduced by Zhang and Sennrich (2019). SwiGLU activation function [PaLM].",
+        "We replace the ReLU non-linearity by the SwiGLU activation function, introduced by Shazeer (2020) to improve the performance. We use a dimension of 2\n34d instead of 4d as in PaLM."
+      ],
+      "citations_total": 3,
+      "citations_valid": 3,
+      "cited_relevant": true,
+      "evidence_count": 4,
+      "latency_ms": 4498.0,
+      "wall_ms": 4527.1,
+      "claim_verdicts": [
+        "supported",
+        "not_supported"
+      ]
+    },
+    {
+      "id": "q041",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 1,
+      "latency_ms": 1633.9,
+      "wall_ms": 1651.9,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q042",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 6,
+      "latency_ms": 2510.7,
+      "wall_ms": 2531.1,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q043",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 5,
+      "latency_ms": 2389.9,
+      "wall_ms": 2409.9,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q044",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 5,
+      "latency_ms": 2411.1,
+      "wall_ms": 2431.9,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q045",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 6,
+      "latency_ms": 2482.6,
+      "wall_ms": 2505.0,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q046",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 1,
+      "latency_ms": 1967.5,
+      "wall_ms": 1989.7,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q047",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 6,
+      "latency_ms": 2608.6,
+      "wall_ms": 2630.7,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q048",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 6,
+      "latency_ms": 2442.2,
+      "wall_ms": 2463.1,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q049",
+      "kind": "unanswerable",
+      "status": "insufficient_evidence",
+      "reason": "The retrieved passages do not contain enough information to answer this question.",
+      "claims": [],
+      "citations_total": 0,
+      "citations_valid": 0,
+      "cited_relevant": null,
+      "evidence_count": 3,
+      "latency_ms": 1895.2,
+      "wall_ms": 1917.6,
+      "claim_verdicts": []
+    },
+    {
+      "id": "q050",
+      "kind": "unanswerable",
+      "status": "answered",
+      "reason": null,
+      "claims": [
+        "LLaMA-65B: 449 MWh"
+      ],
+      "citations_total": 1,
+      "citations_valid": 1,
+      "cited_relevant": null,
+      "evidence_count": 6,
+      "latency_ms": 2998.7,
+      "wall_ms": 3030.8,
+      "claim_verdicts": [
+        "supported"
+      ]
+    }
+  ]
+}

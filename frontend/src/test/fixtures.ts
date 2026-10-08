@@ -42,6 +42,7 @@ export const searchResponse = (overrides: Partial<SearchResponse> = {}): SearchR
       rank: 1,
       chunk_id: 'chunk-1',
       score: 0.81234,
+      rank_score: null,
       text: 'Passage about attention spanning two pages.',
       page_start: 3,
       page_end: 4,

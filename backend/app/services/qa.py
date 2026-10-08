@@ -116,6 +116,7 @@ class QAService:
             "generation_options": dict(self._provider.options),
             "prompt_version": PROMPT_VERSION,
             "embedding_model": self._search.embedding_model,
+            "retrieval": self._search.describe(),
         }
 
     # ---- asking
@@ -200,6 +201,7 @@ class QAService:
             "generation_model": self._provider.model_name,
             "generation_options": dict(self._provider.options),
             "prompt_version": PROMPT_VERSION,
+            "retrieval": self._search.describe(),
         }
 
     # ---- persistence

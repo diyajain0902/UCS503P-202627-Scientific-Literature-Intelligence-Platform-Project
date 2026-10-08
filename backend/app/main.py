@@ -24,6 +24,11 @@ def _warm_up_models(container: Container) -> None:
         container.embedder.warm_up()
     except Exception:
         logger.exception("embedding_model_warm_up_failed")
+    if container.reranker is not None:
+        try:
+            container.reranker.warm_up()
+        except AppError as exc:
+            logger.warning("reranker_warm_up_failed", extra={"reason": exc.message})
     if container.ollama is not None and container.settings.ollama_warm_up:
         try:
             container.ollama.warm_up()

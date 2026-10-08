@@ -36,6 +36,7 @@ class Container:
     runner: JobRunner
     qa: QAService
     analysis: AnalysisService
+    reranker: CrossEncoderReranker | None = None
     engine: Engine | None = None
     arxiv: ArxivClient | None = None
     ollama: OllamaProvider | None = None
@@ -96,6 +97,8 @@ def build_container(settings: Settings) -> Container:
         rrf_k=settings.hybrid_rrf_k,
         candidate_multiplier=settings.hybrid_candidate_multiplier,
         reranker=reranker,
+        dense_weight=settings.hybrid_dense_weight,
+        sparse_weight=settings.hybrid_sparse_weight,
     )
     ollama = OllamaProvider(
         base_url=str(settings.ollama_base_url),
@@ -119,6 +122,7 @@ def build_container(settings: Settings) -> Container:
         analysis=AnalysisService(
             session_factory, search, ollama, max_context_chars=settings.qa_max_context_chars
         ),
+        reranker=reranker,
         engine=engine,
         arxiv=arxiv,
         ollama=ollama,

@@ -3,6 +3,7 @@
 import time
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -36,6 +37,8 @@ class SearchService:
         rrf_k: int = 60,
         candidate_multiplier: int = 4,
         reranker: RerankerProtocol | None = None,
+        dense_weight: float = 1.0,
+        sparse_weight: float = 1.0,
     ) -> None:
         self._sessions = session_factory
         self._embedder = embedder
@@ -44,6 +47,8 @@ class SearchService:
         self._rrf_k = rrf_k
         self._candidate_multiplier = candidate_multiplier
         self._reranker = reranker
+        self._dense_weight = dense_weight
+        self._sparse_weight = sparse_weight
         self._pgvector_checked = False
 
     @property
@@ -53,6 +58,21 @@ class SearchService:
     @property
     def search_mode(self) -> str:
         return self._search_mode
+
+    def describe(self, search_mode: str | None = None) -> dict[str, Any]:
+        """Retrieval configuration recorded with answers, analyses, and evaluation runs (NFR-09)."""
+        mode = search_mode or self._search_mode
+        config: dict[str, Any] = {"search_mode": mode, "embedding_model": self.embedding_model}
+        if mode in {"hybrid", "hybrid_rerank"}:
+            config.update(
+                rrf_k=self._rrf_k,
+                candidate_multiplier=self._candidate_multiplier,
+                dense_weight=self._dense_weight,
+                sparse_weight=self._sparse_weight,
+            )
+        if mode == "hybrid_rerank":
+            config["reranker_model"] = self._reranker.model_name if self._reranker else None
+        return config
 
     def search(
         self,
@@ -79,42 +99,29 @@ class SearchService:
         with self._sessions() as session:
             self._require_supported_pgvector(session)
 
+            vector = self._embedder.embed([cleaned])[0]
             if mode == "dense":
-                vector = self._embedder.embed([cleaned])[0]
                 hits = search_chunks(session, vector, top_k, paper_ids)
-
             elif mode == "bm25":
-                hits = search_bm25_chunks(session, cleaned, top_k, paper_ids)
-
-            elif mode == "hybrid":
-                vector = self._embedder.embed([cleaned])[0]
+                hits = search_bm25_chunks(session, cleaned, vector, top_k, paper_ids)
+            else:
                 candidate_k = max(top_k * self._candidate_multiplier, 20)
-                hits = search_hybrid_chunks(
+                fused = search_hybrid_chunks(
                     session=session,
                     query_vector=vector,
                     query_text=cleaned,
-                    top_k=top_k,
+                    top_k=candidate_k if mode == "hybrid_rerank" else top_k,
                     paper_ids=paper_ids,
                     candidate_k=candidate_k,
                     rrf_k=self._rrf_k,
+                    dense_weight=self._dense_weight,
+                    sparse_weight=self._sparse_weight,
                 )
+                hits = fused[:top_k]
 
-            elif mode == "hybrid_rerank":
-                vector = self._embedder.embed([cleaned])[0]
-                candidate_k = max(top_k * self._candidate_multiplier, 20)
-                candidates = search_hybrid_chunks(
-                    session=session,
-                    query_vector=vector,
-                    query_text=cleaned,
-                    top_k=candidate_k,
-                    paper_ids=paper_ids,
-                    candidate_k=candidate_k,
-                    rrf_k=self._rrf_k,
-                )
-                if self._reranker is not None and candidates:
-                    hits = self._reranker.rerank(cleaned, candidates, top_k)
-                else:
-                    hits = candidates[:top_k]
+        if mode == "hybrid_rerank" and self._reranker is not None:
+            # Runs after the session is released: inference does not need a DB connection.
+            hits = self._reranker.rerank(cleaned, fused, top_k)
 
         return SearchResult(
             hits=hits,

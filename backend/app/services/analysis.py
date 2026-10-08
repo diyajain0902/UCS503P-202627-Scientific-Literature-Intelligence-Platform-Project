@@ -215,6 +215,7 @@ class AnalysisService:
             "max_context_chars": self._max_context_chars,
             "generation_options": dict(self._provider.options),
             "embedding_model": self._search.embedding_model,
+            "retrieval": self._search.describe(),
         }
         analysis = Analysis(
             id=uuid.uuid4(),

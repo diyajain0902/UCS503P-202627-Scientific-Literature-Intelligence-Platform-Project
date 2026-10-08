@@ -30,6 +30,69 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — Milestone 7: Release readiness, M6 validation, and protocol audits (branch `feature/m7-release-readiness`)
+
+Branched from `main` at `4eff300` (M6, PR #9, merged). The team asked for M7 together with all missing documents,
+data, and audits (protocol steps 4, 5a, 6).
+
+**M6 validation: defects found and fixed** (details: `docs/audits/2026-10-09-rag-evaluation-audit.md`):
+1. **ADR-0008 table did not match any run record** (BM25 R@5 0.650 vs. 0.525 recorded; hybrid 0.825 vs. 0.725;
+   all latencies under 100 ms vs. 0.65–3.0 s). Rewritten from re-run records, with a correction notice.
+2. **`qa_min_score` compared with cross-encoder logits.** In `hybrid_rerank` the reranker overwrote
+   `ChunkHit.score`; in `hybrid`, BM25-only hits carried `ts_rank_cd`. Now `score` is always cosine similarity
+   and `rank_score` holds the mode's ordering score (also exposed in the search API). Regression tests added.
+   The M6 log's "defect 2 fixed" covered only part of this.
+3. **BM25 took 636 ms per query**: `to_tsvector` was recomputed for every matching row, and migration 0005 had
+   never been applied to the eval database. Migration **0006** stores `chunks.text_tsv` (generated) with a GIN
+   index: 19 ms for the same query; BM25 eval p50 went from 653 ms to 56 ms.
+4. The CI gate ran `hybrid_rerank` against the dense threshold 0.675. It is now per mode (`hybrid_rerank` ≥ 0.85,
+   `dense` ≥ 0.675).
+5. Retrieval settings were not recorded with answers, analyses, or eval runs (NFR-09). They are now. Configured
+   hybrid weights were ignored, and are now applied. A reranker that fails to load now returns 503 instead of 500.
+   The reranker warms up at start.
+6. Not done from M6 scope: the **small-to-big chunking experiment**. Deferred, as a deviation; see the handover §4.
+
+**Threshold change justification (`CLAUDE.md` §3):** the new `hybrid_rerank` gate 0.85 is the measured baseline
+0.875 (35/40, `20261008T204032Z_retrieval_192ac2b.json`) minus one item, the same rule as M3's dense gate. This
+tightens the gate; the dense gate is unchanged.
+
+**Data corrections:** the eval corpus holds 399 pages / 1,654 chunks (the database was built once, in M3). The M3
+entry below says 1,207 pages / 1,634 chunks, which is wrong. `docs/evaluation.md` is corrected.
+
+**M7 delivered:** stack end-to-end tests (`tests/test_stack_e2e.py`, marker `e2e`); availability probe
+(`scripts/uptime_probe.py`) and a 25-minute pilot window; latency profile; nginx security headers;
+`dependency-audit` CI job; `docs/security.md`, `docs/operations.md`, `docs/handover.md`; audits in `docs/audits/`
+(RAG evaluation, security and privacy first pass, CI/CD and reproducibility); README, RTM, ADR-0008, and
+evaluation doc updated; Compose passes `SLIP_SEARCH_MODE`.
+
+**Evaluation (AC power; full tables in `docs/evaluation.md` §7):**
+- Retrieval, commit `192ac2b`: dense R@5 0.700 / MRR 0.416 (identical to M3); bm25 0.525 / 0.393; hybrid
+  0.725 / 0.527; **hybrid_rerank 0.875 / 0.701**, search p95 2.0 s. NFR-01 met on this set, with caveats: the mode
+  was chosen on the same set, and the labels are unreviewed.
+- Q&A with `hybrid_rerank`, 2 runs (`20261008T204611Z`, `20261008T205117Z`): answer rate 0.875 / 0.95,
+  cited-relevant 0.725 / 0.75, citation validity 1.00, abstention recall 0.90, **false answers 1/10 (q050; M5:
+  0/10)**, warm p95 **4.50 / 4.43 s → NFR-03 not met**. Profile: retrieval p50 1.16 s, generation p50 1.95 s.
+  Groundedness (self-judged): 83.8% supported of 37 claims.
+
+**Availability pilot (NFR-05):** window 2026-10-08 21:04:41 to 21:30:11 UTC (25.5 min; it was planned as 60 min and stopped early at the team's request), 52 probes at 30 s intervals: search 100% (52/52), Q&A readiness 100% (52/52), no unobserved gaps. Log: `eval/uptime/20261009_pilot_window.jsonl`. **This is not evidence for NFR-05's ≥ 99% over a real pilot window**; a semester-scale pilot is still needed.
+
+**End-to-end on the rebuilt Docker stack** (schema 0006): `pytest -m e2e` **7 passed** (ready; search finds the
+uploaded paper in all four modes; Q&A citations valid; summary cited or abstains; delete → 404). Browser: the
+search page works with the new CSP and the console shows no errors. `curl -I` shows all four security headers.
+
+**Dependency scans (local):** `pip-audit` found no known vulnerabilities (`torch` +cpu is not auditable).
+`npm audit` found 0 vulnerabilities.
+
+**Commands and results (local):** ruff, format, mypy strict (75 files) pass; unit **134 passed**;
+`pytest -m "integration or model"` **80 passed**; frontend lint, typecheck, build pass, `npm test` **24 passed**;
+`pytest -m e2e` **7 passed**. **CI** (GitHub Actions run 37845151567, commit `ec8490d`): all 6 jobs succeeded,
+including `retrieval-eval` with the new per-mode gates on Linux and the new `dependency-audit`.
+
+**Open (needs a team decision):** security S1 (app uses a superuser DB role), S2 (no PDF parse timeout); human
+review of the eval labels; the q050 false answer; recall vs. latency default (`hybrid_rerank` vs. `hybrid`);
+proposal amendment for ADR-0001; moving the repo out of OneDrive. Security audit step 5b (second pass) is
+still to do.
+
 ## 2026-10-08 — Milestone 5: Summaries and knowledge extraction (branch `feature/m5-summaries-extraction`)
 
 Branched from `feature/m4-corpus-management` (M4 not yet merged).

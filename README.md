@@ -4,12 +4,13 @@ UCS503P 202627 Scientific Literature Intelligence Platform Project — a retriev
 answers questions over arXiv and uploaded papers with citations to source pages. Everything runs locally
 (sentence-transformers embeddings, PostgreSQL + pgvector, Ollama for generation).
 
-**Status:** Milestone 5 (summaries, cross-paper synthesis, structured extraction, comparison) complete.
-Milestone 4 (corpus management: PDF upload, arXiv search, filters, delete, history, dashboard):
-Milestone 3 (evaluation): Baseline: Recall@5 0.70 (target 0.80 not met); see
-`docs/evaluation.md`. Milestone 2: Working: arXiv import by ID → page-aware extraction → chunking → local embeddings →
-pgvector semantic search, and grounded Q&A with the local Ollama model (citations checked server-side, explicit
-"insufficient evidence"). Not yet: evaluation (M3), PDF upload and corpus management (M4), summaries (M5).
+**Status (2026-10-09):** milestones M0–M6 merged; M7 (release readiness) delivered on
+`feature/m7-release-readiness`, awaiting team approval. Working end to end: arXiv import and PDF upload →
+page-aware extraction → chunking → local embeddings → hybrid search (dense + BM25 + cross-encoder rerank) → grounded
+Q&A with the local Ollama model (server-checked citations, explicit "insufficient evidence"), summaries, synthesis,
+extraction, comparison, corpus management, evaluation harness with a CI gate.
+Measured (`docs/evaluation.md` §7): Recall@5 0.875 (target 0.80; assistant-written, unreviewed labels); Q&A warm p95
+4.4–4.5 s (target 3 s **not met**). Handover: `docs/handover.md`. Operations: `docs/operations.md`.
 
 ## Layout
 
@@ -18,7 +19,9 @@ pgvector semantic search, and grounded Q&A with the local Ollama model (citation
 | `backend/` | FastAPI service (Python 3.12, uv), Alembic migrations |
 | `frontend/` | React + TypeScript + Vite app |
 | `docker-compose.yml` | PostgreSQL + pgvector, backend, frontend (localhost-only ports) |
-| `docs/` | Requirements, architecture, ADRs, plan, progress |
+| `docs/` | Requirements, architecture, ADRs, plan, progress, evaluation, security, operations, handover, audits |
+| `eval/` | Evaluation corpus manifest, question set, run records, uptime logs |
+| `scripts/` | Operational scripts (availability probe) |
 | `Project Proposal/` | Submitted course proposal |
 | `CLAUDE.md` | Engineering contract |
 
@@ -39,8 +42,8 @@ docker compose up --build
 
 3. Open http://localhost:8080. API docs: http://localhost:8000/api/v1/docs.
 
-The first start downloads the embedding model (~90 MB) into the `hf-cache` volume; `/api/v1/ready` reports
-`embedding_model: loading` until it finishes. Ports bind to 127.0.0.1 only.
+The first start downloads the embedding model and the reranker (~90 MB each) into the `hf-cache` volume;
+`/api/v1/ready` reports `embedding_model: loading` until the embedder is ready. Ports bind to 127.0.0.1 only.
 
 ## Local development
 
@@ -67,7 +70,7 @@ cd frontend && npm install && npm run dev
 Backend unit tests, lint, types:
 
 ```bash
-cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest -m "not integration and not model and not network and not ollama"
+cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest -m "not integration and not model and not network and not ollama and not e2e"
 ```
 
 Backend integration tests (need the `slip_test` database the compose `db` service creates, and `SLIP_TEST_DATABASE_URL`):
@@ -86,6 +89,12 @@ Live arXiv check (manual, network):
 
 ```bash
 cd backend && uv run pytest -m network
+```
+
+End-to-end against the running Docker stack (manual; needs Ollama; uploads and then deletes a synthetic paper):
+
+```bash
+cd backend && SLIP_E2E_BASE_URL=http://localhost:8080/api/v1 uv run pytest -m e2e
 ```
 
 Frontend:
@@ -124,3 +133,6 @@ cd backend && uv run alembic upgrade head && uv run python -m app.evaluation bui
   out of OneDrive (recommended), or build from a copy outside it.
 - Q&A returns 503 "Ollama is not reachable": start Ollama. 503 "not installed": `ollama pull qwen2.5:3b`.
 - An import fails with "Interrupted by a server restart": the backend restarted mid-job; import the paper again.
+- Search returns 503 "Reranker model … could not be loaded": the first start needs internet access to download
+  `cross-encoder/ms-marco-MiniLM-L-6-v2`, or set `SLIP_SEARCH_MODE=hybrid` (no reranker).
+- Searches take ~2 s: expected in the default `hybrid_rerank` mode on CPU (`docs/evaluation.md` §7).

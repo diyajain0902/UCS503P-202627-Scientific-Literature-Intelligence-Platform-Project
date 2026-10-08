@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
@@ -113,3 +114,41 @@ def test_ready_with_database_and_without_ollama(client: TestClient) -> None:
     checks = response.json()["checks"]
     assert checks["database"]["ok"] is True and "pgvector" in checks["database"]["detail"]
     assert checks["ollama"]["ok"] is False
+
+
+@pytest.mark.parametrize("mode", ["dense", "bm25", "hybrid", "hybrid_rerank"])
+def test_every_search_mode_reports_cosine_scores(client: TestClient, mode: str) -> None:
+    """Regression (M6): ``score`` is the cosine similarity in every mode, so ``qa_min_score``
+    keeps its calibrated meaning; the mode's own ordering score is ``rank_score`` (FR-24)."""
+    _import(client, "2101.00001")
+    _import(client, "2101.00002")
+    query = {"query": "graph neural networks nodes", "top_k": 5, "search_mode": mode}
+    results = client.post("/api/v1/search", json=query).json()["results"]
+
+    assert results
+    assert results[0]["paper"]["title"] == "Graph Paper"
+    assert all(-1.0 <= r["score"] <= 1.0 for r in results)
+    rank_scores = [r["rank_score"] for r in results]
+    if mode == "dense":
+        assert rank_scores == [None] * len(results)
+    else:
+        # The test container has no reranker, so hybrid_rerank falls back to RRF order.
+        assert rank_scores == sorted(rank_scores, reverse=True)
+    if mode == "bm25":
+        terms = ("graph", "neural", "node", "network")  # English stems of the query terms
+        assert all(any(t in r["text"].lower() for t in terms) for r in results)
+
+
+def test_bm25_uses_the_stored_tsvector_index(sessions: sessionmaker[Session]) -> None:
+    with sessions() as session:
+        indexdef = session.execute(
+            text("SELECT indexdef FROM pg_indexes WHERE indexname = 'ix_chunks_text_tsv'")
+        ).scalar_one()
+        generated = session.execute(
+            text(
+                "SELECT is_generated FROM information_schema.columns "
+                "WHERE table_name = 'chunks' AND column_name = 'text_tsv'"
+            )
+        ).scalar_one()
+    assert "gin (text_tsv)" in indexdef
+    assert generated == "ALWAYS"
