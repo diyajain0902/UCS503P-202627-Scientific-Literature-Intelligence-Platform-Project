@@ -72,7 +72,7 @@ Corpus `nlp-core` v1 (20 papers, 1,634 chunks, chunker `tokwin-v1|…|w256|o38`)
 (40 answerable, 10 unanswerable, 110 evidence quotes). **Labels: written by the AI assistant, 0 items
 human-reviewed (ADR-0007).** Hardware: Ryzen 7 7435HS, RTX 3050 Laptop 4 GB, Windows 11; embeddings on CPU.
 
-### Retrieval (`eval/runs/*_retrieval_*.json`, final record listed in the progress log)
+### Retrieval (official record `eval/runs/20261008T170309Z_retrieval_3eab94d.json`)
 
 | Recall@1 | Recall@5 | Recall@10 | MRR | Search p50 / p95 |
 |---------:|---------:|----------:|----:|-----------------:|
