@@ -2,6 +2,34 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-10-09 — Milestone 6: Retrieval optimization (branch `feature/m6-retrieval-optimization`)
+
+Branched from up-to-date `main` (M5 PR #8 merged).
+
+**Delivered:**
+- Migration `0005` (`idx_chunks_fts` GIN index on `to_tsvector('english', text)` in `chunks`).
+- `search_bm25_chunks` using PostgreSQL full-text search with term extraction and `OR` fallback (`to_tsquery('english', terms)`).
+- `search_hybrid_chunks` using Reciprocal Rank Fusion (RRF) to combine dense cosine similarity hits and BM25 sparse hits with $k=60$ (FR-24).
+- `CrossEncoderReranker` in `app/retrieval/rerank.py` wrapping `cross-encoder/ms-marco-MiniLM-L-6-v2` (FR-25).
+- `SearchService` routing for search modes (`dense`, `bm25`, `hybrid`, `hybrid_rerank`).
+- API `SearchRequest` schema update with optional `search_mode` parameter.
+- `app.evaluation` CLI extension with `--search-mode` argument.
+- ADR-0008 (`docs/adr/0008-hybrid-retrieval-and-reranking.md`).
+
+**Defect found and fixed:**
+1. Expression index `idx_chunks_fts` caused Alembic autogenerate drift detection failure; fixed by adding `Index("idx_chunks_fts", text("to_tsvector('english', text)"), postgresql_using="gin")` to `Chunk.__table_args__` in `app/db/models.py`.
+2. Initial `search_hybrid_chunks` assigned RRF score directly to `ChunkHit.score`, causing Q&A evidence threshold filtering (`qa_min_score = 0.30`) to discard evidence; fixed by preserving `dense` similarity score on `ChunkHit` for thresholding while ordering candidates by RRF rank and reranker score.
+
+**Retrieval Evaluation Results (on 20-paper NLP eval corpus `eval/qa_v1.json`):**
+- **Dense Baseline**: Recall@1 0.200, **Recall@5 0.700**, Recall@10 0.775, MRR 0.416 (NFR-01 not met). Run record: `20261008T195820Z_retrieval_0006bbd.json`.
+- **BM25 Sparse**: Recall@1 0.300, Recall@5 0.525, Recall@10 0.650, MRR 0.393. Run record: `20261008T200202Z_retrieval_0006bbd.json`.
+- **Hybrid RRF (Dense + BM25)**: Recall@1 0.400, Recall@5 0.725, Recall@10 0.825, MRR 0.539. Run record: `20261008T200317Z_retrieval_0006bbd.json`.
+- **Hybrid RRF + Cross-Encoder (`hybrid_rerank`)**: Recall@1 **0.575** (+187%), **Recall@5 0.875** (+25%), Recall@10 **0.925**, MRR **0.701** (+68.5%). **NFR-01 (Recall@5 >= 0.80) is PASSED!** Run record: `20261008T200750Z_retrieval_0006bbd.json`.
+
+**Commands and results (local):**
+- Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
+- Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
+
 ## 2026-10-08 — Milestone 5: Summaries and knowledge extraction (branch `feature/m5-summaries-extraction`)
 
 Branched from `feature/m4-corpus-management` (M4 not yet merged).

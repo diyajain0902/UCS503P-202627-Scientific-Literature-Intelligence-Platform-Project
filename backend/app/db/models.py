@@ -152,6 +152,11 @@ class Chunk(Base):
             postgresql_using="hnsw",
             postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
+        Index(
+            "idx_chunks_fts",
+            text("to_tsvector('english', text)"),
+            postgresql_using="gin",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)

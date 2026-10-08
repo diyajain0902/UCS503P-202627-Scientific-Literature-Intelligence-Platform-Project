@@ -123,13 +123,18 @@ def base_record(
 
 
 def run_retrieval(
-    dataset: EvalDataset, search: SearchService, sessions: sessionmaker[Session], top_k: int
+    dataset: EvalDataset,
+    search: SearchService,
+    sessions: sessionmaker[Session],
+    top_k: int,
+    search_mode: str | None = None,
 ) -> dict[str, Any]:
     rankings: list[list[bool]] = []
     latencies: list[float] = []
     items: list[dict[str, Any]] = []
+    mode = search_mode or search.search_mode
     for item in dataset.items:
-        result = search.search(item.question, top_k)
+        result = search.search(item.question, top_k, search_mode=mode)
         latencies.append(result.took_ms)
         flags = [is_relevant(item, h.paper.arxiv_id, h.chunk.text) for h in result.hits]
         top_score = result.hits[0].score if result.hits else None
@@ -164,6 +169,7 @@ def run_retrieval(
     return {
         "config": {
             "top_k": top_k,
+            "search_mode": mode,
             "embedding_model": search.embedding_model,
             "chunker_versions": _chunker_versions(sessions),
         },

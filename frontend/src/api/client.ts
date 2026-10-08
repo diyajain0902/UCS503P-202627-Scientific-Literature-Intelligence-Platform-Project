@@ -141,10 +141,10 @@ export const api = {
   job: (id: string, signal?: AbortSignal) => request<Job>(`/jobs/${encodeURIComponent(id)}`, { signal }),
   papers: (limit = 50, offset = 0, signal?: AbortSignal) =>
     request<Page<Paper>>(`/papers?limit=${limit}&offset=${offset}`, { signal }),
-  search: (query: string, topK: number) =>
+  search: (query: string, topK: number, searchMode?: string) =>
     request<SearchResponse>('/search', {
       method: 'POST',
-      body: JSON.stringify({ query, top_k: topK }),
+      body: JSON.stringify({ query, top_k: topK, search_mode: searchMode }),
     }),
   ask: (question: string) =>
     request<QAAnswer>('/qa', { method: 'POST', body: JSON.stringify({ question }) }),

@@ -86,5 +86,7 @@ def search(body: SearchRequest, container: ContainerDep) -> SearchResponse:
             f"query must be at most {settings.search_max_query_chars} characters"
         )
     top_k = body.top_k or settings.search_default_top_k
-    result = container.search.search(body.query, top_k, body.paper_ids)
+    result = container.search.search(
+        body.query, top_k, body.paper_ids, search_mode=body.search_mode
+    )
     return SearchResponse.of(body.query, top_k, result)
