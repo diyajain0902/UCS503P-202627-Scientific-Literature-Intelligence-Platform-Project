@@ -264,5 +264,7 @@ def write_record(record: dict[str, Any], runs_dir: Path) -> Path:
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     commit = str(record["git"]["commit"])[:7] or "nogit"
     path = runs_dir / f"{stamp}_{record['kind']}_{commit}.json"
-    path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
     return path
