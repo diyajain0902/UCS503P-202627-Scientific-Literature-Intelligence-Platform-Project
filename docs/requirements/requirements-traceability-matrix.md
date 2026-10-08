@@ -3,7 +3,7 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-08 (Milestone 2).
+Last updated: 2026-10-08 (Milestone 3).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|
@@ -25,9 +25,9 @@ Last updated: 2026-10-08 (Milestone 2).
 | FR-16 | M4 | `backend/app/services/corpus.py`, `backend/app/api/v1/routes.py`, `frontend/src/features/corpus/` | `test_search_integration.py` (list papers); `PaperList.test.tsx` | — | Partial — list + detail endpoints and list UI; filters/delete are M4 |
 | FR-17 | M1, M4 | `backend/app/services/ingestion.py`, `backend/app/services/jobs.py`, `frontend/src/features/ingest/` | `test_ingestion_pipeline.py` (states, actionable errors, crash rollback, interrupted jobs, single in-flight job); `ImportForm.test.tsx` | — | Partial — states/errors/retry-by-reimport verified; retry button UI is M4 |
 | FR-18 | M2, M4 | `queries`, `answers`, `answer_evidence`, `answer_citations` (migration 0002); `GET /api/v1/qa`, `GET /api/v1/qa/{id}` | `test_qa_integration.py` (persisted provenance, history order, errors recorded, survives paper deletion) | NFR-09 | Partial — persistence + API verified; history UI is M4 |
-| FR-19 | M3 | `backend/app/evaluation/`, `eval/` | — | NFR-01, NFR-02 | Planned |
-| FR-20 | M3, M5 | `backend/app/evaluation/` | — | NFR-03, NFR-06, NFR-07 | Planned |
-| FR-21 | M3 | `.github/workflows/ci.yml` | — | NFR-01 | Planned |
+| FR-19 | M3 | `backend/app/evaluation/` (`dataset.py`, `metrics.py`, `corpus.py`, `runner.py`, `__main__.py`), `eval/corpus.json`, `eval/qa_v1.json`, `eval/runs/` | `test_eval_metrics.py` (hand-computed); `test_eval_integration.py` (corpus verify, label check, runs, records); baseline runs | NFR-01, NFR-02 | Verified (tooling); labels AI-written, unreviewed (ADR-0007) |
+| FR-20 | M3, M5 | `backend/app/evaluation/runner.py::run_qa` | `test_eval_integration.py::test_qa_run_and_record`; baseline Q&A runs | NFR-03, NFR-06, NFR-07 | Partial — citation validity, cited-relevant, abstention, latency measured; semantic groundedness is M5 |
+| FR-21 | M3 | `.github/workflows/ci.yml` (`retrieval-eval`) | CI job builds corpus from arXiv and gates Recall@5 ≥ 0.675 | NFR-01 | Implemented; first CI result recorded in progress log |
 | FR-22 | M4 | `frontend/src/features/dashboard/` | — | — | Planned |
 | FR-23 | M4 | `frontend/src/features/settings/` | — | — | Planned |
 | FR-24 | M6 | `backend/app/retrieval/` | — | NFR-01 | Planned |
@@ -49,3 +49,14 @@ Last updated: 2026-10-08 (Milestone 2).
 | NFR-15 | M0+ | `frontend/src/features/` | Role/label-based queries in all component tests; responsive grid; sr-only status text | — | Partial — no manual accessibility audit yet |
 
 Planned module paths are indicative and will be corrected here when code lands.
+
+## Non-functional targets measured in M3
+
+| NFR | Target | Measured (M3 baseline) | Status |
+|-----|--------|------------------------|--------|
+| NFR-01 | Recall@5 ≥ 0.80 | 0.700 | **Not met** |
+| NFR-02 | MRR reported | 0.416 | Verified (reported) |
+| NFR-03 | p95 Q&A ≤ 3 s | 2.74 s (AC, one run); 7.24 s (battery); cold 5.9–10.5 s | Not established — depends on power state; more runs needed |
+| NFR-04 | Search p95 reported | 53 ms | Verified (reported) |
+| NFR-06 | 100% displayed citations valid | 1.00 citation validity in all runs | Verified on eval set |
+| NFR-07 | Abstention reported | recall 1.00, precision 0.50–0.59, false answers 0/10 | Verified (reported) |

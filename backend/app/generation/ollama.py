@@ -112,5 +112,9 @@ class OllamaProvider:
         self._post({"model": self.model_name, "prompt": "", "keep_alive": self._keep_alive})
         logger.info("generation_model_loaded", extra={"model": self.model_name})
 
+    def unload(self) -> None:
+        """Evict the model from memory (used to measure cold-start latency)."""
+        self._post({"model": self.model_name, "prompt": "", "keep_alive": 0})
+
     def close(self) -> None:
         self._client.close()

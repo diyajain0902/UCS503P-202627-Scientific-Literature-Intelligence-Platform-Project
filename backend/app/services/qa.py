@@ -106,6 +106,18 @@ class QAService:
         self._provider = provider
         self._limits = limits
 
+    def describe(self) -> dict[str, Any]:
+        """Configuration that determines answers (recorded in evaluation runs)."""
+        return {
+            "default_top_k": self._limits.default_top_k,
+            "min_score": self._limits.min_score,
+            "max_context_chars": self._limits.max_context_chars,
+            "generation_model": self._provider.model_name,
+            "generation_options": dict(self._provider.options),
+            "prompt_version": PROMPT_VERSION,
+            "embedding_model": self._search.embedding_model,
+        }
+
     # ---- asking
     # ---------------------------------------------------------------------------------------
 
