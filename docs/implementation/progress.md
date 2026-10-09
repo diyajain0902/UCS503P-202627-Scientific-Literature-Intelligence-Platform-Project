@@ -30,6 +30,28 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — MVP CI/CD and reproducibility check (branch `chore/mvp-reproducibility-check`)
+
+Fresh clone outside OneDrive, new `.env`, separate Compose project with new volumes (deleted afterwards); the
+existing stack was paused, then restarted with its data intact. Reports: `docs/operations/mvp-setup-and-testing.md`
+and `docs/operations/mvp-reproducibility-report.md`.
+
+**Results:** `uv sync --locked` and `npm ci` pass; compose build pass (cached layers, not a cold build); fresh
+database migrated 0001→0006; ready after about 15 minutes (model downloads). Unit **139**, integration + model **83**
+(0 skipped), ollama **3**, e2e **7**, frontend **24**; lint, types, build pass. Demo journey verified: arXiv
+import, search, an answered question with citation P1 resolving to the page-8 chunk, inspector in the browser.
+2 of 3 manual questions abstained (one retrieval miss, one model abstention).
+
+**Findings fixed:**
+- R-1: CI `retrieval-eval` failed on `main` (`1ab4a0b`) because arXiv returned 429s. `build-corpus` now retries
+  with backoff.
+- R-2: `/ready` ignored the reranker; the first search blocked 87 s. The reranker is now in the readiness check.
+- R-3: database outage gave a generic 500; it is now a 503 with an actionable message.
+- R-4: a missing CI test database would have skipped all integration tests silently; it now fails.
+
+Regression tests for each. **Not observed:** CI result for this branch and the final result of `main` @
+`4d31e7b`.
+
 ## 2026-10-09 — Protocol step 5b: MVP security and privacy audit (branch `chore/step5b-mvp-security-audit`)
 
 Branched from `main` at `1ab4a0b` (step 4, PR #11, merged). Report: `docs/security/mvp-security-audit.md`;
