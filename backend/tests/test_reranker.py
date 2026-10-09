@@ -87,3 +87,24 @@ def test_reranker_load_failure_is_a_dependency_error(_: MagicMock) -> None:
     reranker = CrossEncoderReranker(model_name="missing")
     with pytest.raises(DependencyUnavailableError, match="could not be loaded"):
         reranker.rerank("q", [make_hit("a"), make_hit("b")], top_k=2)
+
+
+def test_readiness_reports_reranker_state() -> None:
+    """Regression (clean-install check): /ready said "ready" while the reranker had failed to
+    load, so the first search blocked on a download."""
+    from app.services.health import check_reranker
+
+    assert check_reranker(None, "dense").ok
+    assert check_reranker(CrossEncoderReranker(), "hybrid").ok
+    pending = check_reranker(CrossEncoderReranker(), "hybrid_rerank")
+    assert not pending.ok and pending.detail == "loading"
+    with patch("app.retrieval.rerank.CrossEncoder", side_effect=OSError("timed out")):
+        failed = CrossEncoderReranker()
+        with pytest.raises(DependencyUnavailableError):
+            failed.warm_up()
+    result = check_reranker(failed, "hybrid_rerank")
+    assert not result.ok and "OSError: timed out" in result.detail
+    with patch("app.retrieval.rerank.CrossEncoder", return_value=MagicMock()):
+        failed.warm_up()
+    assert check_reranker(failed, "hybrid_rerank").ok
+    assert failed.load_error is None

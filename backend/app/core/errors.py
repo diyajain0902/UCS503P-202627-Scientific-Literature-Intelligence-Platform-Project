@@ -8,10 +8,15 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger(__name__)
 
 INTERNAL_ERROR_MESSAGE = "An internal error occurred. Details were written to the server log."
+DATABASE_UNAVAILABLE_MESSAGE = (
+    "The database is unavailable. Check that PostgreSQL is running (GET /api/v1/ready shows "
+    "each dependency)."
+)
 
 
 class AppError(Exception):
@@ -94,6 +99,12 @@ def register_error_handlers(app: FastAPI) -> None:
             f"{location}: {first.get('msg', 'invalid request')}" if location else "invalid request"
         )
         return _envelope("invalid_input", message, 422)
+
+    @app.exception_handler(OperationalError)
+    async def _database_unavailable(_: Request, exc: OperationalError) -> JSONResponse:
+        # Connection-level failures (server down, refused, dropped); details stay in the log.
+        logger.error("database_unavailable", exc_info=exc)
+        return _envelope("dependency_unavailable", DATABASE_UNAVAILABLE_MESSAGE, 503)
 
     @app.exception_handler(Exception)
     async def _unexpected_error(_: Request, exc: Exception) -> JSONResponse:
