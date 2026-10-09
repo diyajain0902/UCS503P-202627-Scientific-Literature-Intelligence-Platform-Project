@@ -116,7 +116,7 @@ def main() -> int:
             no_cmds = re.sub(r"\\(label|ref|autoref|cite|input|include|url|href|addbibresource)\{[^}]*\}", "", no_math)
             if re.search(r"(?<!\\)_", no_cmds):
                 problems.append(f"{where}: unescaped _ outside math")
-            if re.search(r"(?<!\\)#", no_cmds) and "\\newcommand" not in no_cmds and "/.style" not in no_cmds \
+            if re.search(r"(?<!\\)#(?!\d)", no_cmds) and "\\newcommand" not in no_cmds and "/.style" not in no_cmds \
                     and "\\fitfigure" not in no_cmds and ".pic" not in no_cmds:
                 problems.append(f"{where}: unescaped # outside a macro definition")
         if depth != 0:

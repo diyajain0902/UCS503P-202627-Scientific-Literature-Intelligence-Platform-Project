@@ -1,0 +1,21 @@
+% All report diagrams, one per page (standalone class, tikz option).
+% Compile this file once (Overleaf: set Main document to figures.tex, compiler pdfLaTeX), download the PDF,
+% save it in the project as figures.pdf, then compile main.tex. The page order must match the
+% \figpage list in main.tex.
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.multipart,fit,calc,backgrounds,
+  decorations.pathmorphing}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+\input{figures/arch/deployment}      % page 1
+\input{figures/arch/dataflow}        % page 2
+\input{figures/uml/use-case}         % page 3
+\input{figures/uml/class-domain}     % page 4
+\input{figures/uml/class-services}   % page 5
+\input{figures/uml/sequence}         % page 6
+\input{figures/uml/activity}         % page 7
+\input{figures/uml/communication}    % page 8
+\end{document}

@@ -6,11 +6,19 @@ the project compiles without depending on the TeX distribution's version).
 
 ## Build on Overleaf (the intended route)
 
-1. Zip the `report/` folder and upload it to Overleaf (*New Project → Upload Project*), or upload the files into
-   a copy of the supplied TIET template project. Keep the folder structure.
-2. *Menu → Settings*: **Compiler: pdfLaTeX**, **Main document: `main.tex`**. Overleaf runs Biber automatically for
-   biblatex documents.
-3. Recompile. If references show as `[?]`, recompile once more (pdfLaTeX → Biber → pdfLaTeX → pdfLaTeX).
+Overleaf's free plan has a short compile-time limit, and drawing all eight TikZ diagrams inside the full report
+exceeds it. The diagrams are therefore compiled once, separately:
+
+1. Zip the `report/` folder and import it with *New Project → Upload Project* (don't drop the zip into an existing
+   project: it would not be unpacked).
+2. **Diagrams:** *Menu* → **Main document: `figures.tex`**, **Compiler: pdfLaTeX** → *Recompile*. You get an
+   8-page PDF, one diagram per page. Download it (*Download PDF*).
+3. Upload that PDF into the project's top level and name it exactly **`figures.pdf`**.
+4. **Report:** *Menu* → **Main document: `main.tex`** → *Recompile*. If references show as `[?]`, recompile once more
+   (Overleaf runs Biber automatically).
+
+`main.tex` includes the pages of `figures.pdf` when that file exists, and otherwise draws the TikZ diagrams itself,
+which is slower but needs no extra step. If you change a diagram, repeat steps 2 and 3.
 
 ## Build locally
 
@@ -36,6 +44,7 @@ Or by hand: `pdflatex main`, `biber main`, `pdflatex main`, `pdflatex main`.
 | Path | Contents |
 |------|----------|
 | `main.tex` | Entry point: preamble, title page, front matter, chapter and appendix order |
+| `figures.tex` | All diagrams, one per page; compile it to produce `figures.pdf` for `main.tex` |
 | `frontmatter/` | Abstract, abbreviations |
 | `chapters/01-…10-*.tex` | Chapters 1–10 |
 | `appendices/` | Setup, API and configuration, traceability matrix, run records |
