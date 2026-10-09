@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.retrieval.embedding import ManagedEmbedder
+from app.retrieval.rerank import CrossEncoderReranker
 from app.retrieval.search import installed_pgvector_version, pgvector_version_problem
 
 
@@ -36,6 +37,19 @@ def check_embedder(embedder: ManagedEmbedder) -> CheckResult:
         return CheckResult(True, f"{embedder.model_name} loaded ({embedder.dimension}-dim)")
     if embedder.load_error:
         return CheckResult(False, embedder.load_error)
+    return CheckResult(False, "loading")
+
+
+def check_reranker(reranker: CrossEncoderReranker | None, search_mode: str) -> CheckResult:
+    """Only ``hybrid_rerank`` uses the cross-encoder (~90 MB download on first start)."""
+    if search_mode != "hybrid_rerank":
+        return CheckResult(True, f"not used (search mode {search_mode})")
+    if reranker is None:
+        return CheckResult(True, "disabled (SLIP_RERANKER_ENABLED=false); hybrid order used")
+    if reranker.is_loaded:
+        return CheckResult(True, f"{reranker.model_name} loaded")
+    if reranker.load_error:
+        return CheckResult(False, f"not loaded, retried on the next search: {reranker.load_error}")
     return CheckResult(False, "loading")
 
 

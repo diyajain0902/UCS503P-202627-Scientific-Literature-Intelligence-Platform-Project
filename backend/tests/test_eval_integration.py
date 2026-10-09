@@ -171,3 +171,67 @@ def test_provenance_check_passes_on_ingested_corpus_and_detects_tampering(
         session.commit()
     report = check_provenance(sessions, store, container.settings.max_pdf_pages)
     assert any("pages 2-2" in p for p in report.problems)
+
+
+class _RateLimitedArxiv(FakeArxiv):
+    """Fails the first ``failures`` downloads of each paper, like arXiv's HTTP 429 bursts."""
+
+    def __init__(self, failures: int) -> None:
+        super().__init__()
+        self.failures = failures
+        self.attempts: dict[str, int] = {}
+
+    def download_pdf(self, arxiv_id: str, version: int, max_bytes: int) -> bytes:
+        from app.core.errors import UpstreamError
+
+        self.attempts[arxiv_id] = self.attempts.get(arxiv_id, 0) + 1
+        if self.attempts[arxiv_id] <= self.failures:
+            raise UpstreamError("arXiv returned HTTP 429")
+        return super().download_pdf(arxiv_id, version, max_bytes)
+
+
+def _flaky_container(
+    failures: int, sessions: sessionmaker[Session], database_url: str, tmp_path: Path
+) -> tuple[Container, _RateLimitedArxiv]:
+    arxiv = _RateLimitedArxiv(failures)
+    arxiv.add(synthetic_metadata("2101.00001"), make_pdf(PAPER_A))
+    arxiv.add(synthetic_metadata("2101.00002"), make_pdf(PAPER_B))
+    settings = Settings(database_url=database_url, ollama_base_url="http://127.0.0.1:1")
+    built = make_test_container(
+        settings, sessions, tmp_path, arxiv=arxiv, chunking=ChunkingConfig(32, 4)
+    )
+    return built, arxiv
+
+
+def test_build_corpus_retries_rate_limited_papers(
+    sessions: sessionmaker[Session], database_url: str, tmp_path: Path
+) -> None:
+    """Regression: CI failed when arXiv answered HTTP 429 (main, run 37884249988)."""
+    from app.evaluation.corpus import build_corpus
+
+    built, arxiv = _flaky_container(1, sessions, database_url, tmp_path)
+    waits: list[float] = []
+    try:
+        lines, failures = build_corpus(MANIFEST, built.ingestion, sessions, waits.append, (5, 10))
+        assert failures == []
+        assert waits == [5]  # one retry round, only for the failed papers
+        assert arxiv.attempts == {"2101.00001": 2, "2101.00002": 2}
+        assert any("retrying 2 paper(s)" in line for line in lines)
+        verify_corpus(MANIFEST, sessions)
+    finally:
+        built.close()
+
+
+def test_build_corpus_reports_papers_that_never_succeed(
+    sessions: sessionmaker[Session], database_url: str, tmp_path: Path
+) -> None:
+    from app.evaluation.corpus import build_corpus
+
+    built, _ = _flaky_container(10, sessions, database_url, tmp_path)
+    waits: list[float] = []
+    try:
+        _, failures = build_corpus(MANIFEST, built.ingestion, sessions, waits.append, (1, 2))
+        assert waits == [1, 2]
+        assert len(failures) == 2 and all("429" in f for f in failures)
+    finally:
+        built.close()

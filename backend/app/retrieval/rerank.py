@@ -35,6 +35,12 @@ class CrossEncoderReranker:
         self.device = device
         self._model: CrossEncoder | None = None
         self._lock = threading.Lock()
+        self.load_error: str | None = None
+        """Last load failure (reported by ``/ready``); loading is retried on the next search."""
+
+    @property
+    def is_loaded(self) -> bool:
+        return self._model is not None
 
     @property
     def model_name(self) -> str:
@@ -48,7 +54,9 @@ class CrossEncoderReranker:
             if self._model is None:
                 try:
                     self._model = CrossEncoder(self._model_name, device=self.device)
+                    self.load_error = None
                 except (OSError, ValueError) as exc:
+                    self.load_error = f"{type(exc).__name__}: {exc}"[:300]
                     raise DependencyUnavailableError(
                         f"Reranker model '{self._model_name}' could not be loaded"
                     ) from exc

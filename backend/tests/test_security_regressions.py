@@ -7,8 +7,14 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
-from app.core.errors import INTERNAL_ERROR_MESSAGE, NotFoundError, register_error_handlers
+from app.core.errors import (
+    DATABASE_UNAVAILABLE_MESSAGE,
+    INTERNAL_ERROR_MESSAGE,
+    NotFoundError,
+    register_error_handlers,
+)
 
 INTERNAL_DETAIL = "postgresql+psycopg://slip:fake-pw-not-real@db/slip at /app/data/storage/x.pdf"
 
@@ -20,6 +26,10 @@ def _app() -> FastAPI:
     @app.get("/boom")
     def boom() -> None:
         raise RuntimeError(INTERNAL_DETAIL)
+
+    @app.get("/db-down")
+    def db_down() -> None:
+        raise OperationalError("SELECT 1", {}, ConnectionRefusedError(INTERNAL_DETAIL))
 
     @app.get("/missing")
     def missing() -> None:
@@ -48,3 +58,13 @@ def test_expected_errors_keep_their_own_status_and_message() -> None:
 def test_container_does_not_write_an_access_log_with_query_strings() -> None:
     dockerfile = (Path(__file__).resolve().parents[1] / "Dockerfile").read_text(encoding="utf-8")
     assert "--no-access-log" in dockerfile
+
+
+def test_database_outage_is_an_understandable_503() -> None:
+    """Reproducibility check: with PostgreSQL stopped, search returned a generic 500."""
+    response = TestClient(_app(), raise_server_exceptions=False).get("/db-down")
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {"code": "dependency_unavailable", "message": DATABASE_UNAVAILABLE_MESSAGE}
+    }
+    assert "fake-pw-not-real" not in response.text

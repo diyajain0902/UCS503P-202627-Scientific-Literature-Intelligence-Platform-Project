@@ -29,9 +29,12 @@ def alembic_config(database_url: str) -> Config:
 def database_url() -> str:
     url = os.environ.get("SLIP_TEST_DATABASE_URL")
     if not url:
-        pytest.skip(
-            "SLIP_TEST_DATABASE_URL is not set (integration tests need PostgreSQL + pgvector)"
-        )
+        reason = "SLIP_TEST_DATABASE_URL is not set (integration tests need PostgreSQL + pgvector)"
+        # CI sets SLIP_REQUIRE_TEST_DATABASE=1 so a missing database fails the job instead of
+        # turning every integration test into a silent skip.
+        if os.environ.get("SLIP_REQUIRE_TEST_DATABASE") == "1":
+            pytest.fail(reason)
+        pytest.skip(reason)
     name = make_url(url).database or ""
     if not name.endswith("_test"):
         pytest.fail(

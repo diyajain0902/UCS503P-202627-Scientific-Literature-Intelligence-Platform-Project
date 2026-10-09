@@ -4,6 +4,7 @@ import { api, errorMessage, type ReadinessResponse } from '../../api/client'
 const LABELS: Record<string, string> = {
   database: 'Database',
   embedding_model: 'Embedding model',
+  reranker: 'Reranker',
   ollama: 'Ollama',
 }
 

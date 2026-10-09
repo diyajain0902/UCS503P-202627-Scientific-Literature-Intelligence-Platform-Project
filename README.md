@@ -42,8 +42,10 @@ docker compose up --build
 
 3. Open http://localhost:8080. API docs: http://localhost:8000/api/v1/docs.
 
-The first start downloads the embedding model and the reranker (~90 MB each) into the `hf-cache` volume;
-`/api/v1/ready` reports `embedding_model: loading` until the embedder is ready. Ports bind to 127.0.0.1 only.
+The first start downloads the embedding model and the reranker (~90 MB each) into the `hf-cache` volume (about
+15 minutes on the reference network); `/api/v1/ready` reports `loading` for `embedding_model` / `reranker` until
+both are ready. Ports bind to 127.0.0.1 only. Full step-by-step guide and test matrix:
+`docs/operations/mvp-setup-and-testing.md`.
 
 ## Local development
 
