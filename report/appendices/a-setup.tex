@@ -1,0 +1,60 @@
+\chapter{Setup and Execution}\label{app:setup}
+
+These steps reproduce the setup that was verified on a fresh clone (\code{docs/operations/mvp-setup-and-testing.md}).
+
+\section{Prerequisites}
+
+Docker Desktop with Compose; Ollama running on the host with the model pulled (\code{ollama pull qwen2.5:3b},
+about 2\,GB); optionally \code{uv} and Node.js 24 for local development. Clone the repository outside OneDrive:
+Docker builds from a OneDrive folder failed on the reference machine.
+
+\section{Start the Stack}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/diyajain0902/UCS503P-202627-Scientific-Literature-Intelligence-Platform-Project.git
+cd UCS503P-202627-Scientific-Literature-Intelligence-Platform-Project
+cp .env.example .env        # set POSTGRES_PASSWORD; never commit .env
+docker compose up -d --build
+\end{lstlisting}
+
+Database migrations run automatically when the backend starts (\code{alembic upgrade head}). Wait until
+\code{http://localhost:8080/api/v1/ready} reports \code{ready} with the database, embedding model, re-ranker and Ollama
+all available; the first start downloads two models of about 90\,MB each (about 15 minutes on the reference network).
+Open \code{http://localhost:8080}. Stop with \code{docker compose down}; \code{docker compose down -v} deletes all data.
+
+\section{Run the Tests}
+
+\begin{lstlisting}[language=bash]
+cd backend
+uv run ruff check . && uv run ruff format --check . && uv run mypy
+uv run pytest -m "not integration and not model and not network and not ollama and not e2e"
+SLIP_TEST_DATABASE_URL=postgresql+psycopg://slip:<password>@127.0.0.1:5432/slip_test \
+  uv run pytest -m "integration or model"
+uv run pytest -m ollama                     # needs Ollama
+SLIP_E2E_BASE_URL=http://localhost:8080/api/v1 uv run pytest -m e2e   # needs the running stack
+cd ../frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build
+\end{lstlisting}
+
+\section{Run the Evaluation}
+
+With \code{SLIP\_DATABASE\_URL} pointing at a separate \code{slip\_eval} database:
+\begin{lstlisting}[language=bash]
+uv run alembic upgrade head
+uv run python -m app.evaluation build-corpus
+uv run python -m app.evaluation check-labels
+uv run python -m app.evaluation retrieval --search-mode hybrid_rerank
+uv run python -m app.evaluation qa          # needs Ollama; add --judge for the local judge
+\end{lstlisting}
+
+\section{Demonstration Sequence}
+
+\begin{enumerate}
+  \item Dashboard: the status bar shows the database, embedding model, re-ranker and Ollama as available.
+  \item Add papers: import \code{1706.03762v7} by identifier, or search arXiv and import a result; upload a PDF.
+  \item Search passages for a concept; note the pages and scores.
+  \item Ask ``What BLEU score does the big Transformer model achieve on the WMT 2014 English-to-German translation
+        task?'' and open citation P1 to show the page-8 passage containing 28.4.
+  \item Ask a question the papers do not cover to show the insufficient-evidence response.
+  \item Summarise or extract a paper; compare two papers.
+  \item Reopen an answer from History; show the Settings view.
+\end{enumerate}

@@ -1,0 +1,94 @@
+% UML activity diagram: paper ingestion (arXiv import or PDF upload).
+% Source of truth: backend/app/api/v1/routes.py + corpus.py (requests), services/ingestion.py
+% (request_arxiv_import, request_upload, run_job, _prepare, _persist), services/jobs.py (JobRunner).
+\begin{tikzpicture}[
+    font=\scriptsize,
+    action/.style={draw, rounded corners=5pt, align=center, text width=2.75cm, minimum height=0.62cm,
+      inner sep=2pt, fill=white},
+    decision/.style={draw, diamond, aspect=1.6, minimum width=0.55cm, minimum height=0.4cm, inner sep=0pt,
+      fill=white},
+    initial/.style={circle, fill=black, minimum size=0.28cm, inner sep=0pt},
+    final/.style={circle, draw, double, double distance=1.2pt, fill=black, minimum size=0.2cm, inner sep=0pt},
+    bar/.style={fill=black, minimum width=1.6cm, minimum height=0.08cm, inner sep=0pt},
+    flow/.style={-{Stealth[length=1.8mm]}},
+    g/.style={font=\tiny, inner sep=1pt, fill=white}
+  ]
+  % Swimlanes
+  \draw (-0.6,1.0) -- (15.6,1.0) -- (15.6,-11.4) -- (-0.6,-11.4) -- cycle;
+  \draw (-0.6,0.45) -- (15.6,0.45);
+  \draw (7.2,1.0) -- (7.2,-11.4);
+  \node[font=\footnotesize\bfseries] at (3.3,0.72) {API request (synchronous)};
+  \node[font=\footnotesize\bfseries] at (11.4,0.72) {Background job (JobRunner thread)};
+
+  % ---- Lane 1: request handling
+  \node[initial] (s) at (3.3,0) {};
+  \node[decision] (d1) at (3.3,-0.75) {};
+  \node[action] (a1) at (1.6,-1.8) {Parse arXiv identifier};
+  \node[action] (u1) at (5.0,-1.95) {Read file (stop above 50\,MB); check PDF signature, encryption, page cap; hash SHA-256};
+  \node[decision] (m1) at (3.3,-3.2) {};
+  \node[decision] (d2) at (3.3,-4.0) {};
+  \node[action] (rej) at (1.5,-5.0) {Return 422 (invalid) or 409 (duplicate) with reason};
+  \node[final] (f1) at (1.5,-5.85) {};
+  \node[action] (st) at (4.6,-5.0) {Store upload as \emph{sha256}.pdf (uploads only)};
+  \node[action] (job) at (4.6,-6.1) {Create queued job, or return the in-flight job for the same source};
+  \node[action] (sub) at (4.6,-7.2) {Submit job to JobRunner; respond 202 Accepted};
+  \node[bar] (fork) at (4.6,-7.95) {};
+  \node[final] (f2) at (4.6,-8.7) {};
+
+  \draw[flow] (s) -- (d1);
+  \draw[flow] (d1.west) -| node[g, above, pos=0.3] {[arXiv ID]} (a1.north);
+  \draw[flow] (d1.east) -| node[g, above, pos=0.3] {[PDF file]} (u1.north);
+  \draw[flow] (a1.south) |- (m1.west);
+  \draw[flow] (u1.south) |- (m1.east);
+  \draw[flow] (m1) -- (d2);
+  \draw[flow] (d2.west) -| node[g, above, pos=0.25] {[invalid or duplicate]} (rej.north);
+  \draw[flow] (rej) -- (f1);
+  \draw[flow] (d2.east) -| node[g, above, pos=0.25] {[valid]} (st.north);
+  \draw[flow] (st) -- (job);
+  \draw[flow] (job) -- (sub);
+  \draw[flow] (sub) -- (fork);
+  \draw[flow] (fork) -- (f2);
+
+  % ---- Lane 2: background processing inside an interruptible region
+  \draw[dashed, rounded corners=8pt] (7.5,0.2) rectangle (15.3,-9.15);
+  \node[action] (p1) at (11.2,-0.45) {state = fetching (attempts + 1)};
+  \node[decision] (d3) at (11.2,-1.3) {};
+  \node[action] (a2) at (9.2,-2.3) {Fetch arXiv metadata};
+  \node[decision] (d4) at (9.2,-3.25) {};
+  \node[action, text width=2.0cm] (a3) at (11.75,-3.25) {state = ready (version already indexed)};
+  \node[final] (f3) at (11.75,-4.1) {};
+  \node[action] (a4) at (9.2,-4.3) {Download PDF (size-capped)};
+  \node[action, text width=2.2cm] (u2) at (13.9,-2.3) {Read stored upload};
+  \node[decision] (m2) at (11.2,-5.05) {};
+  \node[action] (e1) at (11.2,-5.85) {state = extracting: text per page and page offsets (PyMuPDF)};
+  \node[action] (e2) at (11.2,-6.85) {state = chunking: 256-token windows, 38 overlap};
+  \node[action] (e3) at (11.2,-7.7) {state = embedding: MiniLM, batched};
+  \node[action] (e4) at (11.2,-8.55) {Write paper, document, chunks in one transaction};
+  \node[action] (e5) at (11.2,-9.75) {state = ready};
+  \node[final] (f4) at (11.2,-10.6) {};
+  \node[action, text width=2.6cm] (fail) at (14.1,-10.0) {state = failed; error stored; rejected upload file deleted};
+  \node[final] (f5) at (14.1,-10.95) {};
+
+  \draw[flow] (fork.east) -- ++(1.6,0) |- (p1.west);
+  \draw[flow] (p1) -- (d3);
+  \draw[flow] (d3.west) -| node[g, above, pos=0.3] {[arXiv]} (a2.north);
+  \draw[flow] (d3.east) -| node[g, above, pos=0.3] {[upload]} (u2.north);
+  \draw[flow] (a2) -- (d4);
+  \draw[flow] (d4.east) -- node[g, above] {[unchanged]} (a3.west);
+  \draw[flow] (a3) -- (f3);
+  \draw[flow] (d4.south) -- node[g, right] {[new or updated]} (a4.north);
+  \draw[flow] (a4.south) |- (m2.west);
+  \draw[flow] (u2.south) |- (m2.east);
+  \draw[flow] (m2) -- (e1);
+  \draw[flow] (e1) -- (e2);
+  \draw[flow] (e2) -- (e3);
+  \draw[flow] (e3) -- (e4);
+  \draw[flow] (e4) -- (e5);
+  \draw[flow] (e5) -- (f4);
+  % Interrupting edge (any error raised in the region)
+  \draw[flow, decorate, decoration={zigzag, segment length=5pt, amplitude=1.5pt, post length=2mm}]
+    (14.6,-9.15) -- (14.6,-9.62);
+  \node[g, right] at (14.7,-9.35) {error};
+  \draw[flow] (fail) -- (f5);
+  \node[g, anchor=north east, align=right] at (15.25,0.15) {interruptible region};
+\end{tikzpicture}

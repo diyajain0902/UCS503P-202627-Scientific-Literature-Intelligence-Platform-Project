@@ -41,6 +41,7 @@ unreviewed labels), citation validity 1.00, 9/10 unanswerable questions abstaine
 | Decisions | `docs/adr/` |
 | History of the work | `docs/implementation/progress.md` |
 | Handover | `docs/handover.md` |
+| Project report (LaTeX, TIET class, five UML diagrams) | `report/` (build: `report/README.md`) |
 
 ## Layout
 

@@ -1,0 +1,112 @@
+\chapter{Literature Review and Existing Approaches}\label{ch:litreview}
+
+This chapter summarises the published techniques the platform builds on. Statements about what this project does
+are design choices of the team and are identified as such; they are justified by measurements in
+\autoref{ch:testing}, not by the cited works.
+
+\section{Paper Discovery and Metadata}
+
+arXiv exposes an Atom-based query API that returns identifiers, versions, titles, authors, abstracts, categories and
+links to PDF files \cite{arxivapi}. Identifiers are versioned (for example \code{1706.03762v7}), so a corpus can be
+pinned to exact versions, which this project uses for its evaluation corpus. The API documentation asks clients to
+space requests; the project observed HTTP 429 responses when this was not respected and added rate limiting and
+retries accordingly (\autoref{ch:testing}).
+
+\section{PDF Processing and Chunking}
+
+Scientific PDFs encode text as positioned glyphs on pages. Libraries such as PyMuPDF extract text per page
+\cite{pymupdf}, which makes it possible to record the page on which every character lies. Because embedding models
+accept bounded inputs, extracted text is split into chunks. Fixed-size windows with overlap are a common baseline;
+the overlap reduces the chance that a sentence is split across chunk boundaries. A known weakness of plain-text
+extraction is that tables lose their row and column structure, which the project observed in practice
+(\autoref{ch:results}).
+
+\section{Embeddings and Semantic Search}
+
+Transformer encoders \cite{vaswani2017attention,devlin2019bert} can be fine-tuned to map sentences to vectors
+whose cosine similarity reflects semantic similarity. Sentence-BERT introduced siamese fine-tuning of BERT for this
+purpose \cite{reimers2019sbert}; the \code{all-MiniLM-L6-v2} model used here is a compact sentence encoder from
+that family \cite{minilmcard,sbertdocs}, based on the MiniLM distillation approach \cite{wang2020minilm}, and
+produces 384-dimensional vectors. Dense passage retrieval showed that learned dense representations can outperform
+lexical retrieval for open-domain question answering \cite{karpukhin2020dpr}.
+
+\section{Vector Storage and Approximate Nearest-Neighbour Search}
+
+Exact nearest-neighbour search scans every vector. Graph-based indexes such as Hierarchical Navigable Small World
+(HNSW) graphs trade a small loss of recall for sub-linear query time \cite{malkov2020hnsw}. The pgvector extension
+adds a vector type, distance operators and HNSW indexes to PostgreSQL \cite{pgvector}, which lets one database hold
+papers, chunks, embeddings and question history with ordinary transactions and constraints. At the size of the
+project's corpus the PostgreSQL planner chooses an exact scan rather than the HNSW index (\autoref{ch:testing}).
+
+\section{Lexical Retrieval and Rank Fusion}
+
+BM25 ranks documents by term frequency and inverse document frequency with length normalisation
+\cite{robertson2009bm25,manning2008ir}. PostgreSQL provides full-text search with stemming and a cover-density
+ranking function, \code{ts\_rank\_cd} \cite{pgtextsearch}; the project uses it as a BM25-style lexical ranker, not
+as an exact BM25 implementation. Lexical and dense rankings fail on different queries, so combining them is
+attractive. Reciprocal rank fusion (RRF) scores each document by $\sum_r 1/(k + \mathrm{rank}_r)$ over the input
+rankings; its authors reported that it outperformed Condorcet fusion and individual learning-to-rank methods
+\cite{cormack2009rrf}.
+
+\section{Re-ranking}
+
+A cross-encoder reads the query and a candidate passage together and outputs a relevance score. BERT-based
+cross-encoders substantially improved passage ranking on MS MARCO \cite{nogueira2019rerank}. Because the query must
+be re-encoded with every candidate, a cross-encoder is applied only to a short candidate list. The project uses the
+publicly available \code{cross-encoder/ms-marco-MiniLM-L-6-v2} model \cite{crossencodercard}.
+
+\section{Retrieval-Augmented Generation and Grounding}
+
+RAG conditions a generator on retrieved passages \cite{lewis2020rag}; surveys describe many variants of retrieval,
+context construction and evaluation \cite{gao2023ragsurvey}. Two findings from the literature shaped the design.
+First, models do not use long contexts uniformly and can miss information in the middle of the context
+\cite{liu2024lostmiddle}, which motivates bounded, ranked context. Second, generated text may contain claims not
+supported by the input \cite{ji2023hallucination}. The project therefore requires the model to cite passage labels
+for every claim, resolves those labels on the server, and treats a structurally valid citation as necessary but
+not sufficient evidence of support.
+
+\section{Evaluating RAG Systems}
+
+Retrieval is commonly evaluated with Recall@$k$ and mean reciprocal rank (MRR) \cite{manning2008ir,voorhees1999trec8qa}.
+Answer quality is harder to measure. Reference-free frameworks such as RAGAS score faithfulness and relevance with
+a language model \cite{es2023ragas}, and studies of ``LLM-as-a-judge'' report useful agreement with humans together
+with biases \cite{zheng2023judge}. The project uses a local model as a supplementary judge only and reports its
+disagreements with manual inspection (\autoref{ch:testing}).
+
+\section{Prompt Injection}
+
+Text retrieved into a model's context can contain instructions. Indirect prompt injection showed that such text
+can take control of LLM-integrated applications \cite{greshake2023injection}, and the OWASP Top 10 for LLM
+applications lists prompt injection first \cite{owaspllm}. The project treats retrieved text as untrusted data: it is
+delimited, delimiter-like text is neutralised, the instructions forbid following it, and the output format is
+constrained by a JSON schema.
+
+\section{Local Language Models}
+
+Open-weight models can be served locally; Ollama provides a local HTTP API for running such models
+\cite{ollama}. The project uses \code{qwen2.5:3b} from the Qwen2.5 family \cite{qwen2024qwen25}, chosen because it
+fits in the 4\,GB of GPU memory on the reference laptop. Local inference keeps documents private but limits model
+size, which affects answer quality and latency.
+
+\section{Summary of Design Choices}
+
+\autoref{tab:lit-choices} relates the main design choices of the team to the literature that motivates them.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Design choices and their background}\label{tab:lit-choices}
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    \textbf{Choice in this project} & \textbf{Background} \\
+    \midrule
+    MiniLM sentence embeddings, cosine similarity & \cite{reimers2019sbert,wang2020minilm,karpukhin2020dpr} \\
+    pgvector inside PostgreSQL & \cite{pgvector,malkov2020hnsw} \\
+    Full-text ranking fused with dense ranking (RRF, $k=60$) & \cite{robertson2009bm25,cormack2009rrf,pgtextsearch} \\
+    Cross-encoder re-ranking of a short candidate list & \cite{nogueira2019rerank} \\
+    Answers only from retrieved, labelled passages; server-side citation checks & \cite{lewis2020rag,ji2023hallucination} \\
+    Bounded context (six passages by default) & \cite{liu2024lostmiddle} \\
+    Retrieved text treated as untrusted & \cite{greshake2023injection,owaspllm} \\
+    Recall@$k$, MRR; local judge as a supplement only & \cite{manning2008ir,voorhees1999trec8qa,zheng2023judge} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

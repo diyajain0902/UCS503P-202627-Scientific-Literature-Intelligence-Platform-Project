@@ -1,0 +1,88 @@
+% UML class diagram, part 2: service layer and its abstractions (public operations only).
+% Drawn for a landscape page (sidewaysfigure), about 18.5 cm x 13.4 cm.
+% Source of truth: backend/app/services/*.py, retrieval/*.py, generation/*.py, ingestion/*.py.
+\begin{tikzpicture}[
+    font=\scriptsize,
+    cls/.style={draw, rectangle split, rectangle split parts=2, text width=3.9cm, align=left,
+      inner sep=2.5pt, fill=white, rectangle split part fill={black!8,white}},
+    use/.style={thin, dashed, -{Stealth[length=2mm]}},
+    real/.style={thin, dashed, -{Triangle[open, length=2.6mm, width=2.4mm]}},
+    lbl/.style={font=\tiny, fill=white, inner sep=1pt}
+  ]
+  % Row 1: use-case services
+  \node[cls] (qa) at (0,0) {\centering\textbf{QAService}
+    \nodepart{second}
+    + ask(question, top\_k, paper\_ids): Answer\\+ get(answer\_id): Answer\\+ history(limit, offset)};
+  \node[cls] (an) at (4.7,0) {\centering\textbf{AnalysisService}
+    \nodepart{second}
+    + summarize(paper\_id): Analysis\\+ extract(paper\_id): Analysis\\+ synthesize(topic, paper\_ids)\\+ compare(paper\_ids, extract\_missing)};
+  \node[cls] (corpus) at (9.4,0) {\centering\textbf{CorpusService}
+    \nodepart{second}
+    + list\_papers(limit, offset, filters)\\+ delete\_paper(paper\_id)\\+ stats(): CorpusStats};
+  \node[cls] (ing) at (14.1,0) {\centering\textbf{IngestionService}
+    \nodepart{second}
+    + search\_arxiv(text, max\_results)\\+ request\_arxiv\_import(raw\_id)\\+ request\_upload(data, filename, title)\\+ retry(job\_id)\\+ run\_job(job\_id)};
+  % Row 2
+  \node[cls] (cit) at (0,-2.9) {\centering\guillemotleft utility\guillemotright\\\textbf{citations}
+    \nodepart{second}
+    + check\_citations(answer, labels)};
+  \node[cls] (search) at (4.7,-2.9) {\centering\textbf{SearchService}
+    \nodepart{second}
+    + search(query, top\_k, paper\_ids,\\\hspace*{1em}search\_mode): SearchResult\\+ describe(search\_mode)};
+  \node[cls] (store) at (9.4,-2.9) {\centering\textbf{FileStore}
+    \nodepart{second}
+    + save(sha256, data): key\\+ read / exists / delete(key)};
+  \node[cls] (runner) at (14.1,-2.9) {\centering\textbf{JobRunner}
+    \nodepart{second}
+    + submit(job\_id): Future\\+ shutdown()};
+  % Row 3: abstractions
+  \node[cls] (gen) at (0,-5.8) {\centering\guillemotleft interface\guillemotright\\\textbf{GenerationProvider}
+    \nodepart{second}
+    + generate(request): GenerationResult};
+  \node[cls] (searchfn) at (4.7,-5.8) {\centering\guillemotleft utility\guillemotright\\\textbf{retrieval.search}
+    \nodepart{second}
+    + search\_chunks(...)\\+ search\_bm25\_chunks(...)\\+ search\_hybrid\_chunks(...)};
+  \node[cls] (emb) at (9.4,-5.8) {\centering\guillemotleft interface\guillemotright\\\textbf{Embedder}
+    \nodepart{second}
+    + embed(texts): list[vector]};
+  \node[cls] (arxsrc) at (14.1,-5.8) {\centering\guillemotleft interface\guillemotright\\\textbf{ArxivSource}
+    \nodepart{second}
+    + fetch\_metadata(arxiv\_id)\\+ download\_pdf(arxiv\_id, version, max\_bytes)\\+ search(text, max\_results)};
+  % Row 4: implementations
+  \node[cls] (ollama) at (0,-8.7) {\centering\textbf{OllamaProvider}
+    \nodepart{second}
+    + generate(request): GenerationResult\\+ warm\_up() / unload()};
+  \node[cls] (rr) at (4.7,-8.7) {\centering\guillemotleft interface\guillemotright\\\textbf{RerankerProtocol}
+    \nodepart{second}
+    + rerank(query, hits, top\_k)};
+  \node[cls] (st) at (9.4,-8.7) {\centering\textbf{SentenceTransformerEmbedder}
+    \nodepart{second}
+    + embed(texts)\\+ warm\_up(); tokenizer()};
+  \node[cls] (ac) at (14.1,-8.7) {\centering\textbf{ArxivClient}
+    \nodepart{second}
+    + fetch\_metadata(...); download\_pdf(...)\\+ search(...)};
+  % Row 5
+  \node[cls] (ce) at (4.7,-11.4) {\centering\textbf{CrossEncoderReranker}
+    \nodepart{second}
+    + rerank(query, hits, top\_k)\\+ warm\_up(); is\_loaded};
+
+  % Dependencies (<<use>>), routed between the boxes
+  \draw[use] (qa.south) -- (cit.north);
+  \draw[use] (qa.west) -- ++(-0.4,0) |- (gen.west);
+  \draw[use] (qa.south east) -- (search.north west);
+  \draw[use] (an.south) -- (search.north);
+  \draw[use] (an.south west) -- (gen.north east);
+  \draw[use] (search.south) -- (searchfn.north);
+  \draw[use] (search.south east) -- (emb.north west);
+  \draw[use] (search.west) -- ++(-0.3,0) |- (rr.west);
+  \draw[use] (corpus.south) -- (store.north);
+  \draw[use] (ing.south west) -- (store.north east);
+  \draw[use] (ing.south west) ++(0.25,0) -- (emb.north east);
+  \draw[use] (ing.east) -- ++(0.5,0) |- (arxsrc.east);
+  \draw[use] (runner.north) -- node[lbl, right] {runs} (ing.south);
+  % Realisations
+  \draw[real] (ollama.north) -- (gen.south);
+  \draw[real] (ce.north) -- (rr.south);
+  \draw[real] (st.north) -- (emb.south);
+  \draw[real] (ac.north) -- (arxsrc.south);
+\end{tikzpicture}

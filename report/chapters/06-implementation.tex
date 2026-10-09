@@ -1,0 +1,134 @@
+\chapter{Implementation}\label{ch:implementation}
+
+This chapter describes how each module is implemented. File paths are relative to the repository root. Code
+excerpts are shortened only by removing blank lines.
+
+\section{Paper Discovery and Metadata}
+
+\code{backend/app/ingestion/arxiv.py} implements the arXiv client. Identifiers are parsed by \code{ArxivId.parse},
+which accepts old- and new-style identifiers with or without a version and rejects anything else with HTTP 422.
+Requests go only to an allow-list of HTTPS hosts, follow redirects only within that list, respect a minimum
+interval of three seconds between requests, and cap download size. Feeds are parsed with \code{defusedxml}. Keyword
+search keeps only word characters, dots and hyphens, so user input cannot inject arXiv query operators, and since the
+final acceptance run it drops common English stop words: arXiv does not index them, and because every term is
+combined with \code{AND}, a title such as ``Attention Is All You Need'' previously returned no results. Search
+results are marked with the version already in the corpus, if any.
+
+\section{PDF Upload and Parsing}
+
+Uploads are read in blocks and rejected as soon as they exceed 50\,MB. Before any job is created,
+\code{inspect\_pdf} checks the \code{\%PDF-} signature, opens the file with PyMuPDF, and rejects corrupt, encrypted,
+empty and over-long (more than 200 pages) documents. The SHA-256 of the bytes detects duplicates (HTTP 409), and the
+file is stored as \code{<sha256>.pdf}; the user's filename is used only as a display label. Extraction
+(\code{extract\_pdf}) reads each page's text, normalises it to Unicode NFC and trims trailing spaces, joins pages with
+a fixed separator, and records the character offset at which each page starts. \code{ExtractedDocument.page\_at}
+maps any character offset back to its page by binary search. A document with fewer than 50 extracted characters per
+page on average is rejected as a probable scan, because optical character recognition is out of scope.
+
+\section{Chunking}
+
+\code{chunk\_document} tokenises the extracted text with the embedding model's own WordPiece tokenizer, so that chunk
+sizes match what the model sees. Windows of 256 tokens, including the two special tokens, advance by a stride of 216
+tokens (an overlap of 38). Each chunk stores the exact substring of the document between its first and last token,
+its character span, and \code{page\_start} and \code{page\_end} computed from that span, so a chunk that crosses a
+page break records both pages. Chunk identifiers are name-based UUIDs derived from the document hash, the chunker
+version and the ordinal, so re-ingesting the same file with the same configuration reproduces them. The chunker
+configuration is stored as a version string (\code{tokwin-v1|...|w256|o38}).
+
+\section{Embedding Generation}
+
+\code{SentenceTransformerEmbedder} loads \code{all-MiniLM-L6-v2} on the CPU, keeping GPU memory for the language
+model. It embeds in batches, normalises vectors to unit length, and checks that every vector has 384 dimensions.
+The model is loaded by a warm-up thread at start-up; until it is loaded, the readiness endpoint reports
+\code{loading}.
+
+\section{Database Persistence}
+
+SQLAlchemy 2 models (\code{backend/app/db/models.py}) map the tables of \autoref{ch:architecture}; the schema itself
+is created only by Alembic migrations 0001 to 0006. Migration 0006 replaced an expression index with a stored
+generated column, \code{text\_tsv = to\_tsvector('english', text)}, and a GIN index, because ranking recomputed
+the vector for every matching row: one query took 636\,ms before the change and 19\,ms after it on the evaluation
+corpus. All derived data of a document is written in a single transaction at the end of a job, so a failure never
+leaves partial chunks.
+
+\section{Semantic Retrieval}
+
+\code{SearchService.search} supports four modes. \code{dense} orders chunks by pgvector cosine distance. \code{bm25}
+ranks with \code{ts\_rank\_cd} over the OR of the query's alphanumeric terms. \code{hybrid} fuses the two candidate
+lists with reciprocal rank fusion, and \code{hybrid\_rerank} (the default) re-orders the fused candidates with the
+cross-encoder. A hit always carries the cosine similarity as \code{score}, so the evidence threshold has one meaning
+in every mode, and the mode's own ordering score separately as \code{rank\_score}. The fusion step is short:
+
+\begin{lstlisting}[language=Python,caption={Reciprocal rank fusion (\code{backend/app/retrieval/search.py})},label=lst:rrf]
+for hits, weight in ((dense_hits, dense_weight), (bm25_hits, sparse_weight)):
+    for rank_idx, hit in enumerate(hits, start=1):
+        cid = hit.chunk.id
+        hit_map.setdefault(cid, hit)
+        rrf_scores[cid] = rrf_scores.get(cid, 0.0) + weight / (rrf_k + rank_idx)
+ordered = sorted(rrf_scores, key=lambda cid: (-rrf_scores[cid], str(cid)))
+return [replace(hit_map[cid], rank_score=rrf_scores[cid]) for cid in ordered[:top_k]]
+\end{lstlisting}
+
+Ties are broken by chunk identifier, which keeps rankings deterministic. Each list contributes
+$\max(4k, 20)$ candidates for a final top $k$.
+
+\section{Context Assembly and Ollama Inference}
+
+\code{QAService} keeps retrieved passages with cosine similarity of at least 0.30 (the threshold calibrated in the
+evaluation milestone), up to 12{,}000 characters, and labels them \code{P1} to \code{Pn} in rank order. The prompt
+(\code{generation/prompts.py}, version \code{qa-v1}) wraps every passage in a \code{<passage>} element with its
+paper title and pages. Any text inside a passage that could open or close such an element is escaped, and the
+system prompt says that passages are quoted source material whose instructions must be ignored. The request to
+Ollama carries a JSON schema that constrains the output to at most five claims, each listing up to six labels that
+match \code{P[0-9]\{1,2\}} before its text of at most 300 characters, followed by a status. Generation uses
+temperature 0, a fixed seed, a 4{,}096-token context and at most 512 new tokens. The adapter
+(\code{OllamaProvider}) maps a refused connection or a missing model to HTTP 503 and a timeout to 504; output that
+does not validate becomes HTTP 502.
+
+\section{Citation Validation and Source Navigation}
+
+\autoref{lst:citations} shows the core of citation checking. Labels are normalised and de-duplicated, and a citation
+is valid only if its label was supplied to the model. A claim whose text consists only of labels is dropped. A
+claim is \code{cited} if at least one of its citations is valid; otherwise it is \code{unsupported}, and if no claim
+is cited the whole answer is withheld as insufficient evidence.
+
+\begin{lstlisting}[language=Python,caption={Citation checking (\code{backend/app/generation/citations.py})},label=lst:citations]
+for raw in claim.citations:
+    label = _normalize_label(raw)
+    if not label or label in seen:
+        continue
+    seen.add(label)
+    citations.append(CheckedCitation(label=label, valid=label in supplied_labels))
+support: Support = "cited" if any(c.valid for c in citations) else "unsupported"
+\end{lstlisting}
+
+Every outcome---answered, insufficient evidence or error---is persisted with snapshots of the evidence, the
+citations (valid ones linked to their evidence row), the model tag, prompt version, retrieval configuration and
+timings. In the interface, each citation is a chip; selecting it opens an inspector with the passage text, paper,
+pages, retrieval rank and score. Invalid citations are marked as such and never linked, and the interface states
+that semantic support is not verified automatically.
+
+\section{Summaries, Synthesis, Extraction and Comparison}
+
+\code{AnalysisService} gathers evidence inside the selected papers with several focused queries (for example about
+the problem, method and results), then applies the same evidence discipline with prompt version
+\code{analysis-v1}. A summary produces three to five cited claims for one paper; a synthesis produces cited claims
+across two to five papers on a topic; an extraction returns the fields task, method, dataset, metric, result and
+limitations, each either cited or \code{unknown}; a comparison builds a table from extractions and adds a caveat
+when the papers report on different datasets. It never ranks the papers.
+
+\section{Frontend Workflows}
+
+The React application (\code{frontend/src/features/}) provides a status bar that polls \code{/api/v1/ready}, and
+views for the dashboard, asking, passage search, the corpus (filters, details, two-step delete), comparison, adding
+papers (arXiv search, import by identifier, upload, recent jobs with retry), history and settings. All requests go
+through one typed client; errors are displayed from the response envelope. Component tests use Testing Library
+queries by role and label.
+
+\section{Configuration and Error Handling}
+
+All settings are read from \code{SLIP\_}-prefixed environment variables with validated ranges
+(\code{backend/app/core/config.py}); \autoref{app:api} lists the most important ones. Domain errors are typed classes
+with a status code and an error code; a handler converts them into the error envelope. Database connection
+failures return 503 with an actionable message, and any other unexpected exception returns a fixed message while
+the details go to the server log.

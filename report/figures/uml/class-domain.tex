@@ -1,0 +1,61 @@
+% UML class diagram, part 1: persistent domain model.
+% Source of truth: backend/app/db/models.py and Alembic migrations 0001--0006 (selected attributes shown).
+\begin{tikzpicture}[
+    font=\scriptsize,
+    cls/.style={draw, rectangle split, rectangle split parts=2, text width=3.75cm, align=left,
+      inner sep=2.5pt, fill=white, rectangle split part fill={black!8,white}},
+    assoc/.style={thin},
+    comp/.style={thin, {Diamond[length=2.4mm, width=1.8mm]}-},
+    depend/.style={thin, dashed, -{Stealth[length=2mm]}},
+    mult/.style={font=\tiny, inner sep=1pt}
+  ]
+  \node[cls] (job) at (0,0) {\centering\textbf{IngestionJob}
+    \nodepart{second}
+    id: UUID\\kind: \{arxiv\_import, pdf\_upload\}\\state: JobState\\source\_ref: str\\error: str [0..1]\\attempts: int};
+  \node[cls] (paper) at (5,0) {\centering\textbf{Paper}
+    \nodepart{second}
+    id: UUID\\source: \{arxiv, upload\}\\arxiv\_id: str [0..1] \{unique\}\\arxiv\_version: int [0..1]\\title: str\\authors: str [*]\\categories: str [*]};
+  \node[cls] (analysis) at (10.2,0) {\centering\textbf{Analysis}
+    \nodepart{second}
+    id: UUID\\kind: \{summary, synthesis, extraction\}\\paper\_ids: UUID [1..5]\\status: str\\result: JSON\\evidence: JSON (snapshots)\\prompt\_version: str};
+  \node[cls] (doc) at (5,-3.75) {\centering\textbf{Document}
+    \nodepart{second}
+    id: UUID\\sha256: str \{unique\}\\storage\_key: str\\page\_count: int\\extractor\_version: str\\chunker\_version: str\\embedding\_model: str};
+  \node[cls] (query) at (10.2,-3.75) {\centering\textbf{Query}
+    \nodepart{second}
+    id: UUID\\question: str\\top\_k: int\\paper\_ids: UUID [*]};
+  \node[cls] (chunk) at (5,-8.0) {\centering\textbf{Chunk}
+    \nodepart{second}
+    id: UUID\\ordinal: int\\page\_start, page\_end: int\\char\_start, char\_end: int\\token\_count: int\\text: str\\embedding: vector(384)\\text\_tsv: tsvector};
+  \node[cls] (answer) at (10.2,-8.0) {\centering\textbf{Answer}
+    \nodepart{second}
+    id: UUID\\status: AnswerStatus\\reason: str [0..1]\\claims: JSON\\generation\_model: str [0..1]\\prompt\_version: str\\config: JSON\\latency\_ms: float};
+  \node[cls] (evid) at (5,-12.6) {\centering\textbf{AnswerEvidence}
+    \nodepart{second}
+    label: str (P1..Pn)\\rank: int\\score: float (cosine)\\chunk\_id: UUID [0..1]\\paper\_title: str\\page\_start, page\_end: int\\text: str (snapshot)};
+  \node[cls] (cite) at (10.2,-12.6) {\centering\textbf{AnswerCitation}
+    \nodepart{second}
+    claim\_index: int\\position: int\\label: str\\valid: bool};
+  % Enumerations (used as attribute types; AnswerStatus by Answer.status)
+  \node[cls, text width=2.9cm] (jobstate) at (0,-4.2) {\centering\guillemotleft enumeration\guillemotright\\\textbf{JobState}
+    \nodepart{second}
+    queued, fetching, extracting,\\chunking, embedding,\\ready, failed};
+  \node[cls, text width=2.9cm] (ansstatus) at (0,-8.0) {\centering\guillemotleft enumeration\guillemotright\\\textbf{AnswerStatus}
+    \nodepart{second}
+    answered,\\insufficient\_evidence,\\error};
+
+  % Relationships
+  \draw[assoc] (job.east) -- node[mult, above, pos=0.15] {*} node[mult, above, pos=0.85] {0..1}
+    node[mult, below, midway] {produces} (paper.west);
+  \draw[comp] (paper.south) -- node[mult, right, pos=0.15] {1} node[mult, right, pos=0.85] {0..1} (doc.north);
+  \draw[comp] (doc.south) -- node[mult, right, pos=0.1] {1} node[mult, right, pos=0.85] {1..*} (chunk.north);
+  \draw[depend] (analysis.west) -- node[mult, above, midway] {refers to (ids)} (paper.east);
+  \draw[assoc] (query.south) -- node[mult, right, pos=0.15] {1} node[mult, right, pos=0.85] {0..1} (answer.north);
+  \draw[comp] (answer.south west) -- node[mult, above, pos=0.12] {1} node[mult, above, pos=0.9] {*} (evid.north east);
+  \draw[comp] (answer.south) -- node[mult, right, pos=0.15] {1} node[mult, right, pos=0.85] {*} (cite.north);
+  \draw[assoc, -{Stealth[length=2mm]}] (cite.west) -- node[mult, above, pos=0.15] {*} node[mult, above, pos=0.8] {0..1}
+    node[mult, below, midway] {resolves to} (evid.east);
+  \draw[assoc, -{Stealth[length=2mm]}] (evid.north) -- node[mult, right, pos=0.2] {*} node[mult, right, pos=0.85] {0..1}
+    node[mult, left, midway] {snapshot of} (chunk.south);
+  \draw[depend] (job.south) -- (jobstate.north);
+\end{tikzpicture}

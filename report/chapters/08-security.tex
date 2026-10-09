@@ -1,0 +1,72 @@
+\chapter{Security, Privacy and Reliability}\label{ch:security}
+
+The system was reviewed twice for security: a first pass during development and a second pass before the MVP
+submission (\code{docs/security/mvp-security-audit.md}). Both were practical reviews by the AI assistant used by the
+team---code reading, the test suites, targeted probes against the running stack and a check of the host's open
+ports. \textbf{They were not penetration tests or a comprehensive security audit.} The threat model is a single user
+on one machine with all application ports bound to \code{127.0.0.1}.
+
+\section{Implemented Controls}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Security and privacy controls and how they were verified}\label{tab:controls}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lLL@{}}
+    \toprule
+    \textbf{Area} & \textbf{Control} & \textbf{Verification} \\
+    \midrule
+    Upload validation & 50\,MB cap (nginx 55\,MB), PDF signature, full open, encryption and page checks before any job & Tests; live probes: non-PDF, truncated and 51\,MB files 422, 60\,MB 413 \\
+    Storage & Server-generated \code{<sha256>.pdf} names; keys validated to stay inside the storage root & Test of unsafe keys; upload named \code{../../etc/passwd.pdf} stored inside storage \\
+    Database & ORM and bound parameters only; lexical query terms reduced to word characters & Code search; injection-style queries left tables intact \\
+    Outbound requests & arXiv hosts allow-listed (HTTPS), redirects re-checked, size caps, \code{defusedxml} & Tests \\
+    Prompt injection & Delimited, neutralised passages; instructions to ignore passage instructions; JSON schema & Real-model test \\
+    Citation integrity & Labels only; server-side resolution; answers without valid citations withheld & Tests; database-wide checks (\autoref{ch:testing}) \\
+    Errors & Typed errors to status codes; fixed message for unexpected errors; 503 for database outage & Tests; live probes \\
+    Resource bounds & Limits on query and question length, top-$k$, pagination, context, tokens, timeouts, one ingestion worker & Tests \\
+    CORS and headers & Origin allow-list; CSP, \code{nosniff}, frame denial, no referrer & Test; \code{curl -I} \\
+    Secrets & \code{.env} ignored by git; only \code{.env.example} committed; settings endpoint without credentials & Git history scan; test \\
+    Privacy & No hosted model; logs contain event names, identifiers and counts, not questions or document text & Log review \\
+    Dependencies & \code{pip-audit} and \code{npm audit} in CI & No known vulnerabilities at the time of review \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+\section{Untrusted Retrieved Text and Model Output}
+
+Retrieved passages are treated as untrusted data (\autoref{ch:litreview}). The model output is also untrusted: it
+must validate against a schema, its citations are resolved against the supplied passages, and a failure produces an
+explicit error rather than an answer. A structurally valid citation is labelled \emph{cited}, not \emph{supported},
+and the interface states that semantic support is not verified.
+
+\section{Local Model Deployment}
+
+Generation runs only on the user's machine through Ollama; there is no hosted fallback. During the second review,
+the host's Ollama service was found listening on all network interfaces, with inbound firewall rules allowing access
+on a network classified as public. This exposes Ollama's unauthenticated API to the local network. It is a host
+setting rather than an application defect; the remediation (binding Ollama to \code{127.0.0.1} and disabling the
+inbound rules) is documented and must be applied by the machine owner. It was not applied during the review.
+
+\section{Logging and Retention}
+
+Logs are JSON lines with request identifiers. The web server's access log, which recorded query strings, was
+disabled. The database retains papers, chunks and the full question history, including evidence snapshots, until
+the user deletes them; there is no automatic retention limit.
+
+\section{Availability and Recovery}
+
+Readiness reports each dependency separately; search continues without Ollama. Jobs interrupted by a restart are
+marked failed on start-up and can be retried. Availability was measured only over a 25.5-minute window (52 of 52
+probes successful), which is too short to support the 99\% target. Backups use \code{pg\_dump} together with a copy
+of the storage volume (\code{docs/operations.md}).
+
+\section{Open Risks}
+
+\begin{itemize}
+  \item No authentication or authorisation: acceptable only while the system stays single-user and local.
+  \item The application connects to PostgreSQL as a superuser; a least-privilege runtime role is planned.
+  \item PDF parsing has no wall-clock timeout (bounded by the size and page limits and a single worker).
+  \item Model revisions are pinned by name, not by revision, and are downloaded on first start.
+  \item The CPU build of PyTorch is not covered by \code{pip-audit}.
+\end{itemize}

@@ -1,0 +1,42 @@
+\chapter{Evaluation Run Records}\label{app:runs}
+
+Every reported evaluation number comes from one of these run records in \code{eval/runs/}. Each record stores the
+git commit, whether tracked files were modified, hardware and power source, the dataset and corpus-manifest hashes,
+the full configuration and per-item results.
+
+{\small
+\begin{longtable}{@{}p{5.6cm}p{1.6cm}p{5.0cm}@{}}
+  \caption{Run records cited in this report}\label{tab:runs} \\
+  \toprule
+  \textbf{Record} & \textbf{Commit} & \textbf{Content} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Record} & \textbf{Commit} & \textbf{Content} \\
+  \midrule
+  \endhead
+  \code{20261008T214635Z\_retrieval} & \code{03fb705} & Dense retrieval, top 10 \\
+  \code{20261008T214832Z\_retrieval} & \code{03fb705} & Hybrid with re-ranking, top 10 \\
+  \code{20261008T214608Z\_profile-retrieval} & \code{03fb705} & Stage latency and redundancy, top 6 \\
+  \code{20261008T203750Z\_retrieval} & \code{192ac2b} & BM25-style lexical retrieval, top 10 \\
+  \code{20261008T203825Z\_retrieval} & \code{192ac2b} & Hybrid (RRF), top 10 \\
+  \code{20261008T204611Z\_qa} & \code{b173e72} & Q\&A, hybrid with re-ranking, local judge \\
+  \code{20261008T205117Z\_qa} & \code{b173e72} & Q\&A, hybrid with re-ranking \\
+  \code{20261008T170309Z\_retrieval} & \code{3eab94d} & Dense baseline (M3) \\
+  \code{eval/uptime/20261009\_pilot\_window.jsonl} & -- & Availability probes (52) \\
+  \bottomrule
+\end{longtable}
+}
+
+\section{Sample Output (real)}
+
+The following answer was produced by the running system during final acceptance (question, then the single claim
+and its validated citations), using the uploaded DistilBERT paper.
+
+\begin{lstlisting}
+Question: How much smaller and faster than BERT is DistilBERT?
+Status:   answered   (model qwen2.5:3b, prompt qa-v1, 3.4 s)
+Claim 1:  DistilBERT is 40% smaller and 60% faster than BERT.
+          P1 valid -> DistilBERT (uploaded PDF), p. 4
+          P3 valid -> DistilBERT (uploaded PDF), pp. 4-5
+\end{lstlisting}

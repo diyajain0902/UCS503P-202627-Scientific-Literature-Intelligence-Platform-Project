@@ -1,0 +1,243 @@
+\chapter{Testing and Evaluation}\label{ch:testing}
+
+All results in this chapter come from commands executed on the reference laptop (\autoref{tab:env}) between 8 and 9
+October 2026, or from the project's continuous-integration runs. Evaluation numbers are taken from run records
+committed under \code{eval/runs/}, which store the git commit, hardware, power source, dataset hash and full
+configuration. Where a measurement has a caveat, the caveat is stated with it.
+
+\section{Test Strategy}
+
+Tests are organised in layers, selected with pytest markers so that each layer runs where its dependencies exist.
+Tests that replace a component with a fake say so in their module documentation.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Test layers and results in the final acceptance run (9 October 2026)}\label{tab:testlayers}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lLlr@{}}
+    \toprule
+    \textbf{Layer} & \textbf{What is real / what is faked} & \textbf{Runs in CI} & \textbf{Passed} \\
+    \midrule
+    Backend unit & Pure code; fake embedder, scripted fake model, fake arXiv & Yes & 140 \\
+    Integration and model & Real PostgreSQL + pgvector and real MiniLM; fake model & Yes & 83 \\
+    Real local model & Ollama \code{qwen2.5:3b} & No & 3 \\
+    Live arXiv & arXiv API & No & 1 \\
+    Stack end-to-end & Running Docker stack through nginx, all real components & No & 7 \\
+    Frontend & Vitest and Testing Library with a mocked HTTP client & Yes & 24 \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+Static checks (Ruff lint and format, mypy in strict mode over 78 files, oxlint, the TypeScript compiler) passed, and
+the production frontend build succeeded. The live arXiv test failed once while arXiv was returning HTTP 429 to the
+machine and passed when re-run; it is reported as such. No test was skipped in the integration layer: in CI a
+missing test database makes the run fail rather than skip.
+
+\subsection{Unit, API and Integration Tests}
+
+Unit tests cover parsing of arXiv identifiers and feeds, query sanitisation, PDF extraction and page mapping,
+deterministic chunking, configuration validation, prompt construction, the output schema, citation checking
+(invalid, duplicate and label-only citations), error mapping of the Ollama adapter, the evaluation metrics, search
+mode routing and fusion, and the error envelope. API tests use FastAPI's test client to check input bounds,
+pagination limits, CORS, request identifiers and readiness. Integration tests run the real pipeline against
+PostgreSQL: arXiv import (with a fake arXiv source), idempotent re-import, upload validation, duplicate detection,
+search in all four modes, question answering with a scripted model (including fabricated labels, abstention and
+generation failures), analyses, corpus management, the evaluation harness, and the provenance checker.
+
+\subsection{Database and Migration Tests}
+
+Integration tests apply all migrations to an empty database, run \code{alembic check} to detect drift between the
+ORM models and the migrations, perform a downgrade and upgrade round trip, and verify constraints such as cascading
+deletes and the vector dimension. A reproducibility check on a fresh clone migrated a new database from revision
+0001 to 0006 on first start.
+
+\subsection{End-to-End Tests}
+
+The end-to-end suite runs against the Docker stack: it checks readiness, uploads a synthetic paper with a unique
+marker word, waits for ingestion, finds the paper with all four search modes, asks a question and checks that a
+citation is reported valid exactly when its label is among the evidence, requests a summary, and deletes the paper.
+During final acceptance the same journeys were also exercised manually with real papers
+(\autoref{sec:acceptance-journeys}).
+
+\section{Evaluation Data Set}
+
+\begin{itemize}
+  \item \textbf{Corpus:} 20 natural-language-processing papers pinned to exact arXiv versions
+        (\code{eval/corpus.json}); 399 pages and 1{,}654 chunks.
+  \item \textbf{Questions:} \code{eval/qa\_v1.json}, 50 items: 40 answerable with 110 verbatim evidence quotes, and 10
+        unanswerable, several of them adversarial (they name a corpus paper and ask for a fact found only in a
+        neighbouring paper).
+  \item \textbf{Provenance of labels:} all items were written by the AI assistant used by the team (ADR-0007) by
+        keyword search of the papers' text, not with the retriever. \textbf{No item has been reviewed by a person.}
+        Each quote is verified to occur in the corpus before every run.
+  \item \textbf{Relevance unit:} a retrieved chunk is relevant if it belongs to the labelled paper and contains one
+        of the item's evidence quotes.
+\end{itemize}
+
+\section{Metrics}
+
+For $Q$ answerable questions, let $r_q$ be the rank of the first relevant chunk for question $q$ (undefined if none
+is in the top 10). Then
+\begin{equation}
+  \recall{k} = \frac{1}{Q}\sum_{q=1}^{Q} \mathbf{1}[r_q \leq k], \qquad
+  \mathrm{MRR} = \frac{1}{Q}\sum_{q=1}^{Q} \frac{1}{r_q},
+\end{equation}
+with $1/r_q = 0$ when no relevant chunk is retrieved. Recall@$k$ is thus a hit rate, as in the proposal. Both are
+implemented in \code{backend/app/evaluation/metrics.py} and tested on hand-computed cases. Citation validity is the
+number of valid citations divided by all citations in answers returned as answered. Abstention recall is the
+fraction of unanswerable questions that receive ``insufficient evidence''; abstention precision is the fraction of
+``insufficient evidence'' outcomes that occur on unanswerable questions. Latency percentiles use the nearest-rank
+method.
+
+\section{Retrieval Results}
+
+\autoref{tab:retrieval} compares the four search modes. Configuration: top 10, RRF $k=60$, candidate pool
+$\max(4k,20)$ per list, AC power, CPU inference.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Retrieval quality and search latency by mode (40 answerable questions)}\label{tab:retrieval}
+  {\small
+  \begin{tabular}{@{}lrrrrr@{}}
+    \toprule
+    \textbf{Mode} & \textbf{R@1} & \textbf{R@5} & \textbf{R@10} & \textbf{MRR} & \textbf{p50 / p95 (ms)} \\
+    \midrule
+    dense (baseline) & 0.200 & 0.700 & 0.775 & 0.416 & 42 / 49 \\
+    bm25 & 0.300 & 0.525 & 0.650 & 0.393 & 56 / 91 \\
+    hybrid (RRF) & 0.375 & 0.725 & 0.825 & 0.527 & 102 / 137 \\
+    hybrid\_rerank (default) & \textbf{0.575} & \textbf{0.875} & \textbf{0.925} & \textbf{0.701} & 1{,}734 / 1{,}955 \\
+    \bottomrule
+  \end{tabular}
+  }
+
+  \smallskip
+  {\footnotesize Run records: dense and hybrid\_rerank \code{20261008T214635Z} and \code{20261008T214832Z}
+  (commit \code{03fb705}); bm25 and hybrid \code{20261008T203750Z} and \code{20261008T203825Z} (commit \code{192ac2b}).}
+\end{table}
+
+Only \code{hybrid\_rerank} meets the target Recall@5 $\geq 0.80$ (NFR-01). Three caveats apply: the mode was chosen
+on the same 50 questions it is measured on; the labels are unreviewed; and with 40 questions the 95\% Wilson interval
+for 35/40 is roughly 0.74 to 0.95, which includes values below the target. Every miss in every mode retrieved the
+correct paper but ranked the answering passage too low. Metrics were identical across four commits, which confirms
+that retrieval is deterministic.
+
+\section{Retrieval Latency Profile}
+
+\autoref{tab:profile} breaks retrieval into stages for the question-answering configuration (top 6, 24 candidates),
+measured with the project's \code{profile-retrieval} command over the 50 questions.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Retrieval stage latency at top 6 (ms, p50 / p95)}\label{tab:profile}
+  {\small
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    \textbf{Stage} & \textbf{Latency} \\
+    \midrule
+    Query embedding (MiniLM, CPU) & 17 / 30 \\
+    Dense SQL (exact scan) & 29 / 36 \\
+    Lexical SQL & 36 / 66 \\
+    Hybrid call (dense + lexical + RRF) & 61 / 85 \\
+    Cross-encoder re-ranking (24 pairs, CPU) & 895 / 985 \\
+    \bottomrule
+  \end{tabular}
+  }
+\end{table}
+
+The cross-encoder accounts for about 92\% of retrieval time. The same profile found 47 pairs of neighbouring
+(overlapping) chunks among the 300 top-6 slots and no exact duplicates. At this corpus size the PostgreSQL planner
+uses an exact sequential scan (12\,ms) instead of the HNSW index, so results are exact.
+
+\section{Question-Answering Results}
+
+Two complete runs over all 50 questions used the default retrieval, \code{qwen2.5:3b} at temperature 0, top 6 and the
+0.30 threshold (\autoref{tab:qa}). The first run also scored each claim with a local judge.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Grounded question answering over the evaluation set}\label{tab:qa}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}Lrr@{}}
+    \toprule
+    \textbf{Measure} & \textbf{Run 1 (\code{204611Z})} & \textbf{Run 2 (\code{205117Z})} \\
+    \midrule
+    Answer rate on answerable questions & 0.875 & 0.950 \\
+    Answerable questions with a valid citation to a relevant passage & 0.725 & 0.750 \\
+    Citation validity (valid / all) & 52 / 52 & 57 / 57 \\
+    Unanswerable questions declined (abstention recall) & 9 / 10 & 9 / 10 \\
+    Abstention precision & 9 / 14 & 9 / 11 \\
+    False answers on unanswerable questions & 1 / 10 & 1 / 10 \\
+    Warm latency p50 / p95 (s) & 3.10 / 4.50 & 3.06 / 4.43 \\
+    Cold start (three samples, s) & 8.4--12.0 & 8.1--10.2 \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+The false answer is the same in both runs: asked how much energy training DistilBERT consumed, the model answered
+with a figure from the LLaMA paper, citing a real passage about the wrong model. Run-to-run differences in the
+answer rate show that generation is not bit-reproducible even at temperature 0; results are therefore reported per
+run. Stored answers from run 2 give a median of 1.16\,s for retrieval and 1.95\,s for generation per question.
+
+\section{Citation Integrity}
+
+Citation integrity was checked deterministically, independently of the model:
+\begin{itemize}
+  \item across all 418 answers stored in the evaluation database, every one of 422 valid citations resolves to an
+        evidence row of the same answer, and no invalid citation is linked to evidence;
+  \item all 2{,}364 evidence snapshots equal the text, pages and paper of the chunk they came from;
+  \item the provenance checker re-extracted all 20 PDFs and confirmed for all 1{,}654 chunks that the stored text
+        equals the document text at the recorded span, that the recorded pages are correct, and that the chunk's
+        first and last words occur on those pages of the PDF (0 problems; 433 chunks span two or more pages).
+\end{itemize}
+Unit and integration tests cover non-existent labels, duplicate labels, label-only claims, malformed model output
+and deleted sources (evidence snapshots are kept with an empty chunk reference). Because the model can only emit
+labels, a fabricated page number or chunk identifier cannot enter the system.
+
+\section{Groundedness}
+
+A valid citation shows that a claim refers to a passage the model was given, not that the passage supports the
+claim. Two complementary checks were made:
+\begin{itemize}
+  \item \textbf{Local judge} (\code{judge-v1}, the same \code{qwen2.5:3b} model): of 37 claims in run 1, 31 (83.8\%)
+        were rated supported, 3 partially supported and 3 not supported. The judge is not independent of the
+        answering model.
+  \item \textbf{Spot check by the AI assistant}, not by a person: 14 claims (the 6 the judge flagged and 8 random
+        claims it rated supported) were read against the full cited text. Ten were supported and answered the
+        question; one was supported but did not answer it; one was a wrong-paper answer (a Transformer question
+        answered with LLaMA's optimiser settings); two were not stated in the passage they cited. The judge agreed
+        with this reading on 11 of 14 claims.
+\end{itemize}
+\textbf{No human spot check has been performed}; it is required by the project's evaluation rules and remains open.
+
+\section{Abstention, Failure Handling and Prompt Injection}
+
+The system abstains at three points: when no passage reaches the threshold (no model call), when the model reports
+insufficient evidence, and when no claim has a valid citation. In the evaluation runs all abstentions on
+unanswerable questions came from the model. Failure handling was tested live: with the database stopped, readiness
+reports the cause and the API returns 503 with an actionable message, recovering when the database restarts; with
+Ollama unreachable, question answering returns 503 while search keeps working; invalid input returns 422 with the
+offending field. A real-model test placed an instruction inside a retrieved passage; the model did not follow it
+(\code{test\_instructions\_inside\_passages\_are\_not\_followed}).
+
+\section{Final Acceptance Journeys}\label{sec:acceptance-journeys}
+
+On 9 October 2026 the rebuilt stack was exercised with real components: discovering papers through arXiv search;
+importing \code{2004.04906v3} (and confirming that a second import created no duplicate); uploading a real five-page
+paper; re-checking provenance for all four stored documents (210 chunks, 0 problems); confirming 384-dimensional
+embeddings for all chunks; searching; asking ``How much smaller and faster than BERT is DistilBERT?'' (answered
+``40\% smaller and 60\% faster'' with two citations whose passages contain both figures, one spanning pages 4--5);
+asking an unsupported question (declined before any model call); running summary, extraction, synthesis and
+comparison; filtering and deleting papers; and opening citations in the user interface. One defect found during
+this run (arXiv title search with stop words returned nothing) was fixed and covered by a regression test.
+
+\section{Continuous Integration}
+
+GitHub Actions runs six jobs on every push: backend lint, types and unit tests; integration tests against a pgvector
+service container with the real embedding model; frontend checks and build; Docker image build; a retrieval
+regression gate that rebuilds the evaluation corpus from arXiv and fails if Recall@5 drops below 0.85 for
+\code{hybrid\_rerank} or 0.675 for \code{dense} (each one question below its baseline); and dependency scanning with
+\code{pip-audit} and \code{npm audit}. One run on the main branch failed because arXiv rate-limited the runner;
+the corpus builder now retries failed downloads with back-off. CI does not use Ollama, so real-model and end-to-end
+tests are run manually.

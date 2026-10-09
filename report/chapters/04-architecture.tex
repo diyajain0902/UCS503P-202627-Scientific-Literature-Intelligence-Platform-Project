@@ -1,0 +1,137 @@
+\chapter{System Analysis and Architecture}\label{ch:architecture}
+
+\section{Architectural Style}
+
+The system is a \emph{modular monolith}: one backend process and one single-page frontend, deployed together with
+the database by Docker Compose (ADR-0002). The project's engineering contract forbids microservices and plugin
+frameworks without a demonstrated need. A single process keeps transactions simple (a paper and all its chunks are
+written in one transaction) and makes the system easy to run on one laptop.
+
+\autoref{fig:deployment} shows the deployed components. The browser talks only to nginx, which serves the built
+React application and proxies \code{/api/v1} to the FastAPI backend. The backend reaches PostgreSQL inside the
+Compose network, Ollama on the host through \code{host.docker.internal}, and arXiv over HTTPS through an
+allow-listed client. All published ports bind to \code{127.0.0.1}.
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/arch/deployment}
+  \caption{Deployment and component architecture}\label{fig:deployment}
+\end{figure}
+
+\section{Backend Layers and Responsibilities}
+
+The backend is written in Python with FastAPI \cite{fastapi}, Pydantic schemas at every boundary, and SQLAlchemy
+with Alembic migrations \cite{sqlalchemy}; the frontend uses React \cite{react} with TypeScript.
+The backend is divided into packages with a strict dependency direction: \code{api} $\rightarrow$
+\code{services} $\rightarrow$ \code{ingestion}, \code{retrieval}, \code{generation}, \code{evaluation}
+$\rightarrow$ \code{db}. Routes never contain SQL or prompts, and the generation package never touches the
+database.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Backend packages}\label{tab:packages}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    \textbf{Package} & \textbf{Responsibility} \\
+    \midrule
+    \code{api/v1} & HTTP routes, Pydantic request and response schemas, error envelope \\
+    \code{services} & Use cases: ingestion jobs, search, question answering, analyses, corpus, health \\
+    \code{ingestion} & arXiv client, PDF validation and page-aware extraction, chunking, file storage \\
+    \code{retrieval} & Embedding model wrapper, dense, lexical and hybrid search, cross-encoder re-ranker \\
+    \code{generation} & Provider interface and Ollama adapter, prompts and output schemas, citation checking \\
+    \code{evaluation} & Evaluation data set, metrics, run records, provenance and profiling commands \\
+    \code{db} & SQLAlchemy models and sessions; schema owned by Alembic migrations \\
+    \code{core} & Settings, logging, typed domain errors \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+A composition root (\code{container.py}) builds the long-lived services from settings; tests build their own
+containers with fakes, which keeps the services independent of their concrete dependencies.
+
+\section{Frontend and API Boundary}
+
+The frontend is a React and TypeScript single-page application with views for the dashboard, asking questions,
+searching passages, the corpus, comparison, adding papers, history and settings. It calls the versioned REST API
+through a single typed client (\code{frontend/src/api/client.ts}). Every error response uses the envelope
+\code{\{"error": \{"code", "message"\}\}}, so the interface can show actionable messages. The main endpoints are
+listed in \autoref{app:api}.
+
+\section{Data Design}
+
+Nine tables hold the persistent state (\code{docs/architecture/data-model.md}):
+\begin{itemize}
+  \item \code{papers}: metadata; \code{arxiv\_id} is unique, which makes arXiv import idempotent.
+  \item \code{documents}: the PDF behind a paper, with its SHA-256 (unique, for duplicate detection), storage key,
+        page count, and the extractor, chunker and embedding-model versions used.
+  \item \code{chunks}: ordinal, \code{page\_start}, \code{page\_end}, \code{char\_start}, \code{char\_end}, token
+        count, text, a 384-dimensional \code{vector} with an HNSW cosine index, and a stored \code{tsvector} with a
+        GIN index for lexical search.
+  \item \code{ingestion\_jobs}: kind, state, error, attempts; a partial unique index allows one in-flight job per
+        source.
+  \item \code{queries}, \code{answers}, \code{answer\_evidence}, \code{answer\_citations}: question history.
+        Evidence rows are \emph{snapshots} of the passages given to the model, so history survives deletion of a
+        paper.
+  \item \code{analyses}: summaries, syntheses and extractions with their evidence snapshots.
+\end{itemize}
+Constraints are enforced in the database (foreign keys with cascades, unique keys, and checks on page ranges,
+character spans and token counts). The schema changes only through Alembic migrations (0001 to 0006); a test
+fails if the ORM models and migrations drift apart.
+
+\section{Ingestion and Retrieval Pipelines}
+
+\autoref{fig:dataflow} traces data from a source document to an answer citation. Ingestion validates the input,
+stores the PDF under a name derived from its hash, extracts text page by page while recording the character
+offset at which each page starts, chunks the text into 256-token windows with a 38-token overlap (ADR-0003),
+embeds the chunks in batches and writes everything in one transaction. Retrieval embeds the question, runs dense
+and lexical search, fuses the two rankings with RRF ($k=60$) and re-orders the fused candidates with the
+cross-encoder (ADR-0008). The provenance chain---paper, page, character span, chunk, retrieval score, citation---is
+preserved end to end.
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/arch/dataflow}
+  \caption{Data flow from source document to answer citation}\label{fig:dataflow}
+\end{figure}
+
+\section{Inference and Citation Flow}
+
+Question answering keeps only passages whose cosine similarity is at least 0.30, labels them \code{P1} to
+\code{Pn}, wraps them in delimiters, and sends them to Ollama together with a JSON schema that constrains the output
+to claims, each listing the labels it relies on, and a status (ADR-0006). The server parses the output, resolves
+every label against the set actually supplied, drops claims that consist only of labels, and returns
+``insufficient evidence'' if the model abstains or if no claim has a valid citation. The detailed interaction is
+shown in the sequence and communication diagrams (\autoref{fig:uml-sequence}, \autoref{fig:uml-communication}).
+
+\section{Error Handling and External Dependencies}
+
+Expected failures are typed domain errors mapped to HTTP status codes: invalid input 422, not found 404, conflict
+409 (duplicate upload), upstream failure 502 (for example arXiv rate limiting), dependency unavailable 503 (Ollama
+or the database not reachable), and generation timeout 504. Unexpected exceptions return a fixed
+\code{internal\_error} message and are logged on the server only. A readiness endpoint reports the database,
+embedding model, re-ranker and Ollama separately. Search keeps working when Ollama is down (NFR-16).
+
+\section{Design Decisions}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Architecture decision records}\label{tab:adrs}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lLL@{}}
+    \toprule
+    \textbf{ADR} & \textbf{Decision} & \textbf{Main alternative rejected} \\
+    \midrule
+    0001 & Local Ollama for generation; no hosted fallback & Hosted Gemini model named in the proposal \\
+    0002 & Modular monolith backend, separate SPA, monorepo & Separate ingestion worker service \\
+    0003 & Chunk window of 256 tokens with 38 overlap, within the encoder input limit & Proposal's 500-token chunks, of which the encoder would see only about half \\
+    0004 & Python 3.12 via uv; PostgreSQL with pgvector in Docker & Native Windows pgvector build \\
+    0005 & In-process ingestion jobs backed by a job table & Celery with Redis \\
+    0006 & Labelled evidence, constrained JSON, server-side citation checks & Prompt with a worked example (it produced a cited answer to an unanswerable question) \\
+    0007 & Evaluation labels written by the AI assistant, with recorded provenance (team decision) & Labels written by the team (the contract's original rule) \\
+    0008 & Hybrid dense and lexical retrieval with cross-encoder re-ranking & Dense retrieval only \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}

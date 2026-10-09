@@ -1,0 +1,35 @@
+% Deployment and component architecture (Docker Compose). Source of truth: docker-compose.yml,
+% frontend/nginx.conf, backend/app/. Rendered by TikZ at compile time.
+\begin{tikzpicture}[
+    font=\footnotesize,
+    box/.style={draw, rounded corners=2pt, align=center, minimum height=8mm, inner sep=3pt, fill=white},
+    store/.style={draw, cylinder, shape border rotate=90, aspect=0.18, align=center, minimum height=11mm,
+      inner sep=2pt, fill=white},
+    ext/.style={draw, dashed, rounded corners=2pt, align=center, minimum height=8mm, inner sep=3pt},
+    arr/.style={-{Stealth[length=2mm]}, thick},
+    lbl/.style={font=\scriptsize, fill=white, inner sep=1pt}
+  ]
+  \node[ext] (browser) at (0,0) {Browser\\(user)};
+  \node[box] (nginx) at (3.4,0) {\textbf{frontend}\\nginx 1.27 + React build\\security headers};
+  \node[box, minimum width=4.6cm] (api) at (8.6,0) {\textbf{backend} (FastAPI, uvicorn)\\
+    \code{api/} $\rightarrow$ \code{services/} $\rightarrow$\\
+    \code{ingestion/}, \code{retrieval/}, \code{generation/}\\$\rightarrow$ \code{db/}};
+  \node[store] (db) at (6.6,-3.0) {\textbf{db}\\PostgreSQL 17\\pgvector 0.8.0};
+  \node[store] (files) at (9.0,-3.0) {storage\\volume\\(PDFs)};
+  \node[store] (models) at (11.3,-3.0) {hf-cache\\volume\\(MiniLM,\\cross-encoder)};
+  \node[ext] (ollama) at (5.2,2.6) {Ollama on host\\\code{qwen2.5:3b} (GPU)};
+  \node[ext] (arxiv) at (11.0,2.6) {arXiv API\\and PDF host};
+
+  \begin{scope}[on background layer]
+    \node[draw, rounded corners=4pt, fill=black!4, inner sep=6pt, fit=(nginx)(api)(db)(files)(models),
+      label={[font=\scriptsize\bfseries]below:Docker Compose project (ports bound to 127.0.0.1)}] {};
+  \end{scope}
+
+  \draw[arr] (browser) -- node[lbl, above] {:8080} (nginx);
+  \draw[arr] (nginx) -- node[lbl, above] {/api/v1} (api);
+  \draw[arr] (api.south west) ++(0.4,0) -- node[lbl, left] {SQL} (db.north);
+  \draw[arr] (api.south) ++(0.4,0) -- (files.north);
+  \draw[arr] (api.south east) ++(-0.4,0) -- (models.north);
+  \draw[arr] (api.north west) ++(0.6,0) -- node[lbl, right, pos=0.4] {HTTP :11434} (ollama.south);
+  \draw[arr] (api.north east) ++(-0.6,0) -- node[lbl, left, pos=0.4] {HTTPS, allow-listed} (arxiv.south);
+\end{tikzpicture}

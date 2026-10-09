@@ -1,0 +1,65 @@
+\chapter{Requirements Traceability Matrix}\label{app:traceability}
+
+Status as determined in the final acceptance run of 9 October 2026
+(\code{docs/release/mvp-requirements-matrix.md}). V = verified, P = partially implemented, U = implemented but
+unverified, F = failed, D = deferred. Module paths are relative to \code{backend/app/} unless stated otherwise.
+
+{\small
+\begin{longtable}{@{}p{1.25cm}p{4.0cm}p{6.6cm}p{0.6cm}@{}}
+  \caption{Requirements traceability}\label{tab:rtm} \\
+  \toprule
+  \textbf{ID} & \textbf{Implementation} & \textbf{Verification evidence} & \textbf{St.} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{ID} & \textbf{Implementation} & \textbf{Verification evidence} & \textbf{St.} \\
+  \midrule
+  \endhead
+  FR-01 & \code{ingestion/arxiv.py} & Unit tests incl. stop-word regression; live search & V \\
+  FR-02 & \code{services/ingestion.py} & Ingestion pipeline tests; live idempotent re-import & V \\
+  FR-03 & \code{ingestion/pdf.py}, \code{api/v1/corpus.py} & Upload tests; live probes & V \\
+  FR-04 & \code{ingestion/pdf.py} & PDF tests; provenance check, 0 problems & V \\
+  FR-05 & \code{ingestion/chunking.py} & Chunking tests; provenance check & V \\
+  FR-06 & \code{retrieval/embedding.py} & Real-model tests; 384-dimension check & V \\
+  FR-07 & \code{db/}, migrations 0001--0006 & Schema, drift and round-trip tests & V \\
+  FR-08 & \code{retrieval/search.py}, \code{services/search.py} & Search integration tests (4 modes); live & V \\
+  FR-09 & \code{services/qa.py}, \code{generation/} & Q\&A tests; real-model tests; live answer & V \\
+  FR-10 & \code{generation/citations.py} & Tests; 422/422 stored citations resolve & V \\
+  FR-11 & \code{services/qa.py} & Tests; 9/10 abstentions; 1 false answer & P \\
+  FR-12 & \code{services/analysis.py} & Analysis tests; live summary & V \\
+  FR-13 & \code{services/analysis.py} & Analysis tests; live synthesis & V \\
+  FR-14 & \code{services/analysis.py} & Analysis tests; live extraction & V \\
+  FR-15 & \code{services/analysis.py} & Analysis tests; live comparison & V \\
+  FR-16 & \code{services/corpus.py}; frontend corpus view & Corpus tests; live filters and delete & V \\
+  FR-17 & \code{services/ingestion.py}, \code{services/jobs.py} & Job and retry tests; live job states & V \\
+  FR-18 & Q\&A tables; frontend history view & Tests; live history & V \\
+  FR-19 & \code{evaluation/}; \code{eval/} & Metric tests; reproducible runs; labels unreviewed & P \\
+  FR-20 & \code{evaluation/runner.py}, \code{groundedness.py} & Runs with judge; no human spot check & P \\
+  FR-21 & \code{.github/workflows/ci.yml} & Retrieval gate in CI & V \\
+  FR-22 & \code{/stats}; dashboard view & Tests; live & V \\
+  FR-23 & \code{/settings}; settings view & Tests; omits search mode & P \\
+  FR-24 & \code{retrieval/search.py} & Tests; Recall@5 0.725 & V \\
+  FR-25 & \code{retrieval/rerank.py} & Tests; Recall@5 0.875 & V \\
+  FR-26 & -- & Scanned PDFs rejected with a clear error & D \\
+  \midrule
+  IR-01--09 & API, config, Compose, CI, health, logging, Ollama adapter, job runner, documentation & Tests, live probes, fresh-clone setup, CI & V \\
+  \midrule
+  NFR-01 & Retrieval & Recall@5 0.875 (caveats in \autoref{ch:testing}) & V \\
+  NFR-02 & Retrieval & MRR 0.701 & V \\
+  NFR-03 & Q\&A & p95 4.43--4.50\,s against 3\,s & F \\
+  NFR-04 & Search & Search latency reported separately & V \\
+  NFR-05 & Operations & 52/52 probes in 25.5 minutes only & P \\
+  NFR-06 & Citations & All displayed citations resolve & V \\
+  NFR-07 & Abstention & Recall 0.90, precision 0.64--0.82 reported & V \\
+  NFR-08 & Determinism & Identical metrics across commits & V \\
+  NFR-09 & Run records & Model, prompt and retrieval configuration stored & V \\
+  NFR-10 & Security & Second review passed with open items & P \\
+  NFR-11 & Privacy & No content in logs; no hosted model & V \\
+  NFR-12 & Bounds & No parse timeout; backend body size uncapped & P \\
+  NFR-13 & Hardware & All runs on the reference laptop & V \\
+  NFR-14 & CI & Green on the main branch & V \\
+  NFR-15 & Accessibility & Role- and label-based tests only & U \\
+  NFR-16 & Degradation & Live: search 200, Q\&A 503 without Ollama & V \\
+  \bottomrule
+\end{longtable}
+}
