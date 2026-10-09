@@ -222,7 +222,7 @@ def test_parse_atom_feed_skips_error_entries() -> None:
 @pytest.mark.parametrize(
     ("text", "query"),
     [
-        ("attention is all", "all:attention AND all:is AND all:all"),
+        ("attention is all", "all:attention"),
         (
             "BERT; DROP TABLE &id_list=1",
             "all:BERT AND all:DROP AND all:TABLE AND all:id_list AND all:1",
@@ -234,6 +234,15 @@ def test_search_query_keeps_only_safe_terms(text: str, query: str) -> None:
     from app.ingestion.arxiv import build_search_query
 
     assert build_search_query(text) == query
+
+
+def test_search_query_drops_stop_words_so_titles_match() -> None:
+    """Regression (MVP acceptance): "attention is all you need" returned no arXiv results because
+    arXiv does not index stop words and every term is AND-ed."""
+    from app.ingestion.arxiv import build_search_query
+
+    assert build_search_query("Attention Is All You Need") == "all:Attention AND all:Need"
+    assert build_search_query("the of and") == "all:the AND all:of AND all:and"  # nothing else left
 
 
 def test_search_query_needs_a_word() -> None:
