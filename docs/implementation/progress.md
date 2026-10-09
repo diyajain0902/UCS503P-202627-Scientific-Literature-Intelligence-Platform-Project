@@ -30,6 +30,17 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — Project report (branch `docs/tiet-project-report`)
+
+LaTeX report under `report/` using the TIET class `tietreport` v1.0.4 (vendored, MIT). It has 10 chapters and 4
+appendices, and five UML diagrams in TikZ (use case; class: domain and services; sequence; activity;
+communication) plus deployment and data-flow figures. Bibliography: 32 entries, each verified against Crossref,
+arXiv or the URL.
+
+**Not compiled.** There is no TeX toolchain on this machine, and the team chose Overleaf. Static checks
+(`report/tools/check_report.py`) pass: 25 files, all labels, citations and inputs resolve. Title-page placeholders:
+group number, year, evaluation stage.
+
 ## 2026-10-09 — Protocol step 7: MVP final acceptance (branch `docs/mvp-final-acceptance`)
 
 Built on `chore/mvp-reproducibility-check` (not yet merged). Reports: `docs/release/mvp-acceptance-report.md`,

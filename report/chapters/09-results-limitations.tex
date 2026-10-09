@@ -1,0 +1,85 @@
+\chapter{Results, Limitations and Future Work}\label{ch:results}
+
+\section{Demonstrated Capabilities}
+
+The final acceptance run concluded that the MVP is \emph{ready with documented limitations}: every mandatory user
+journey works against the running application with real components, and no release-blocking defect remains. The
+demonstrated capabilities are arXiv discovery and idempotent import, validated PDF upload, page-aware extraction
+with verified provenance, semantic search in four modes, grounded question answering with server-verified citations
+and explicit abstention, summaries, syntheses, structured extractions and comparison tables, corpus management,
+question history, a dashboard and a settings view, and graceful handling of invalid input and missing services.
+
+\section{Requirements Achieved}
+
+\autoref{tab:req-summary} summarises the status of the requirements; \autoref{app:traceability} gives the
+per-requirement detail.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Requirement status at final acceptance}\label{tab:req-summary}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    \textbf{Status} & \textbf{Requirements} \\
+    \midrule
+    Verified & FR-01--FR-10, FR-12--FR-18, FR-21, FR-22, FR-24, FR-25; IR-01--IR-09; NFR-01 (on this set, with caveats),
+      NFR-02, NFR-04, NFR-06--NFR-09, NFR-11, NFR-13, NFR-14, NFR-16 \\
+    Partially implemented & FR-11 (one false answer in ten; no ``uncertain'' status), FR-19 (labels not reviewed by
+      a person), FR-20 (no human spot check), FR-23 (settings omit the search mode), NFR-05 (pilot too short),
+      NFR-10 and NFR-12 (open security items) \\
+    Implemented but unverified & NFR-15 (no manual accessibility review) \\
+    Failed & NFR-03 (95th-percentile latency 4.4--4.5\,s against 3\,s) \\
+    Deferred & FR-26 (optical character recognition) \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+\section{Known Limitations}
+
+\begin{itemize}
+  \item \textbf{Latency.} The cross-encoder (about 0.9\,s on the CPU) and generation (about 1.9\,s at the median)
+        keep the 95th percentile above 3\,s. The faster \code{hybrid} mode saves about 1.1\,s per question but
+        lowers Recall@5 to 0.725.
+  \item \textbf{Faithfulness.} The model can answer from a related paper (the wrong-paper failure) or cite a passage
+        that does not state the claim. Structural citation checks cannot detect either.
+  \item \textbf{Abstention on answerable questions.} The system sometimes declines questions that the corpus can
+        answer, either because the answering passage is not retrieved or because the model abstains.
+  \item \textbf{Evaluation evidence.} The 50 labels were written by an AI assistant and not reviewed by a person;
+        the default retrieval mode was selected on the same questions; the set has almost no multi-paper questions
+        and none with conflicting or ambiguous evidence.
+  \item \textbf{Extraction from tables.} Plain-text extraction flattens tables, so a cited value can still be wrong
+        (one perplexity value was reported as a BLEU score in a manual test).
+  \item \textbf{Scope.} No authentication, no OCR, no metadata for uploaded papers, single machine only.
+\end{itemize}
+
+\section{Technical Debt}
+
+The PostgreSQL role used by the application is a superuser; PDF parsing has no timeout; model revisions are not
+pinned; the HNSW index is unused at the current corpus size and its tuning parameters have no effect; neighbouring
+overlapping chunks are not de-duplicated before prompting; and the planned small-to-big chunking experiment
+(ADR-0003, option 3) was not run.
+
+\section{Future Work}
+
+The following are proposed, not implemented:
+\begin{enumerate}
+  \item Human review of a sample of the evaluation labels, and a new held-out question set covering multi-paper,
+        conflicting, ambiguous and partially supported cases, so that further tuning does not overfit.
+  \item A claim-to-passage entailment check and a check that the cited paper matches the paper named in the
+        question, evaluated on the held-out set; an ``uncertain'' answer status.
+  \item Latency work: a smaller re-ranking pool, re-ranking on the GPU, or a smaller generation budget, each measured
+        against both recall and latency.
+  \item Table-aware extraction and OCR for scanned papers.
+  \item A least-privilege database role, a parsing timeout, pinned model revisions, and authentication before any
+        shared deployment.
+  \item A longer availability pilot with the existing probe script.
+\end{enumerate}
+
+\section{Maintenance and Extension at the Institute}
+
+The repository is organised for handover: requirements with permanent identifiers, a traceability matrix, eight
+decision records, a progress log of every milestone, setup and operations guides, audit reports, and automated
+tests with a CI pipeline. New retrieval or generation components can be added behind the existing interfaces
+(\code{Embedder}, \code{RerankerProtocol}, \code{GenerationProvider}) and evaluated with the same harness and
+regression gate. A different local model can be selected with one setting, and is recorded with every answer.

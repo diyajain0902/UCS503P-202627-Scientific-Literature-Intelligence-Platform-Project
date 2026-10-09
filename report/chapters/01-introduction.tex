@@ -1,0 +1,79 @@
+\chapter{Introduction}\label{ch:intro}
+
+\section{Background and Motivation}
+
+Scientific output grows faster than any individual can read. A student or researcher who wants to know which
+optimiser a paper used, how two methods compare on a benchmark, or what limitations the authors acknowledge must
+locate the relevant papers, open each PDF and search its text by hand. Large language models (LLMs) can answer
+such questions fluently, but a model answering from its parameters gives no indication of where an answer came
+from and is known to produce plausible but unsupported statements \cite{ji2023hallucination}. For scientific use,
+an answer is only useful if the reader can check it against the source.
+
+Retrieval-augmented generation (RAG) addresses this by first retrieving passages from a document collection and
+then asking the model to answer from those passages \cite{lewis2020rag,gao2023ragsurvey}. Retrieval alone does
+not make an answer trustworthy: the model can still cite the wrong passage, cite a passage it was never given, or
+answer when the passages do not contain the answer. This project therefore treats \emph{citation integrity} and
+\emph{abstention} as engineering requirements that the server enforces and that the team measures, rather than as
+properties assumed of the model.
+
+\section{Problem Statement}
+
+Build a software system that lets a user ask natural-language questions over a corpus of scientific papers and
+returns answers in which every factual claim is traceable to a specific passage and page of a specific paper, that
+explicitly declines to answer when the indexed papers do not support an answer, and whose retrieval and answer
+quality are measured reproducibly. The corpus must be populated both from arXiv and from user-supplied PDF files.
+
+\section{Objectives}
+
+\begin{enumerate}[label=O\arabic*.]
+  \item Ingest papers from the arXiv API and from uploaded PDF files, with validation and job tracking.
+  \item Extract text page by page and preserve provenance from paper to page, character span and chunk.
+  \item Provide semantic search over the corpus that returns ranked passages with their pages.
+  \item Answer questions with a \emph{local} language model, cite each claim, verify every citation on the server,
+        and abstain explicitly when evidence is insufficient.
+  \item Provide single-paper summaries, cross-paper synthesis, structured extraction and comparison.
+  \item Measure retrieval quality (Recall@$k$, MRR), citation validity, abstention and latency on a
+        version-controlled evaluation set, and gate retrieval regressions in continuous integration.
+  \item Apply software-engineering discipline throughout: requirement identifiers, traceability, architecture
+        decision records, automated tests, security review and reproducible setup.
+\end{enumerate}
+
+\section{Scope and Exclusions}
+
+The delivered system is a single-user application intended to run on one machine with Docker Compose. In scope are
+the capabilities listed above together with a web interface for each of them. The following are out of scope for
+the minimum viable product (MVP) and are discussed in \autoref{ch:results}: optical character recognition for
+scanned PDFs, user accounts and authorisation, public deployment, and any hosted (cloud) language model. The
+original proposal named a hosted model (Gemini 2.5 Flash) and a cloud deployment; the team replaced the former with
+local inference through Ollama and kept deployment local (decision record ADR-0001), so that no paper or question
+leaves the user's machine.
+
+\section{Intended Users}
+
+The primary users are students and researchers who maintain a working set of papers and want to query it. A
+secondary audience is the course evaluators and any future maintainers at the institute, for whom the repository
+provides requirements, decision records, test suites and operating instructions.
+
+\section{Contributions}
+
+The contributions of this project are engineering contributions, not new retrieval or generation methods:
+\begin{itemize}
+  \item A working, documented end-to-end system combining established techniques: dense retrieval
+        \cite{karpukhin2020dpr,reimers2019sbert}, BM25-style lexical retrieval \cite{robertson2009bm25}, reciprocal
+        rank fusion \cite{cormack2009rrf}, cross-encoder re-ranking \cite{nogueira2019rerank} and local generation.
+  \item A server-side citation contract: the model may only cite passage labels; labels are resolved against the
+        passages actually supplied, and an answer without a valid citation is withheld.
+  \item An evaluation harness with reproducible run records, a continuous-integration retrieval gate, and audits
+        of retrieval quality, security and reproducibility whose findings are reported in this document, including
+        the unfavourable ones.
+\end{itemize}
+
+\section{Organisation of the Report}
+
+\autoref{ch:litreview} reviews the techniques the system builds on. \autoref{ch:requirements} states the
+requirements and use cases. \autoref{ch:architecture} presents the architecture and \autoref{ch:uml} the five UML
+diagrams. \autoref{ch:implementation} describes the implementation and \autoref{ch:testing} the tests and
+evaluation results. \autoref{ch:security} covers security, privacy and reliability, \autoref{ch:results} the
+results, limitations and future work, and \autoref{ch:conclusion} concludes. Appendices give setup instructions,
+API and configuration references, the requirements traceability matrix and test records. The report is typeset
+with the TIET report class \cite{tietreport}.

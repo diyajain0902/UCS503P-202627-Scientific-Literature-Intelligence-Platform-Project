@@ -1,0 +1,24 @@
+\chapter{Conclusion}\label{ch:conclusion}
+
+The project set out to let a user ask questions over a collection of scientific papers and receive answers whose
+every claim can be traced to a passage and a page, with an explicit refusal when the papers do not support an
+answer. The resulting system ingests papers from arXiv and from uploaded PDFs, preserves provenance from page to
+chunk, retrieves passages by combining dense and lexical search with cross-encoder re-ranking, and generates answers
+with a local model whose citations are resolved on the server.
+
+The principal engineering decisions were to keep all inference local and refuse any hosted fallback, to let the
+model cite only passage labels so that the server can verify every citation, to persist evidence snapshots so that
+history survives changes to the corpus, and to treat evaluation as part of the system: a versioned evaluation set,
+reproducible run records, and a regression gate in continuous integration.
+
+The verification evidence is mixed in a way the report has tried to state precisely. Citation integrity and
+provenance were verified deterministically across every stored answer and every stored chunk, and the default
+retrieval configuration reached a Recall@5 of 0.875 on the evaluation set. Against that, the latency target was not
+met, one in ten unanswerable questions received a wrong-paper answer, spot checks found claims not supported by their
+cited passage, and the evaluation labels have not yet been reviewed by a person.
+
+For the course, the project exercised the full software-engineering cycle: requirements with stable identifiers,
+architecture decisions recorded with their alternatives, design modelled in UML, layered automated testing, security
+and reproducibility reviews, and an acceptance decision based on evidence rather than a successful build. For the
+institute, it provides a documented, locally deployable base that future students can extend and evaluate with the
+same tools.

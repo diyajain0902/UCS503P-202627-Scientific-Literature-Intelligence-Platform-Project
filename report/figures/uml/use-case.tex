@@ -1,0 +1,67 @@
+% UML use-case diagram. Use cases: report Table "Use cases" (UC-01..UC-13).
+% Source of truth: frontend views (frontend/src/features/*) and API routes (backend/app/api/v1/*).
+\begin{tikzpicture}[
+    font=\scriptsize,
+    usecase/.style={draw, ellipse, align=center, minimum width=3.2cm, minimum height=0.85cm, inner sep=1pt,
+      fill=white},
+    assoc/.style={thin},
+    dep/.style={dashed, -{Stealth[open, length=2mm]}},
+    stereo/.style={font=\tiny, fill=white, inner sep=1pt},
+    actor/.pic={
+      \draw[thick] (0,0.62) circle (0.17);
+      \draw[thick] (0,0.45) -- (0,-0.05);
+      \draw[thick] (-0.32,0.28) -- (0.32,0.28);
+      \draw[thick] (0,-0.05) -- (-0.24,-0.5);
+      \draw[thick] (0,-0.05) -- (0.24,-0.5);
+    }
+  ]
+  % System boundary
+  \draw[thick] (2.2,0.4) rectangle (10.9,-12.4);
+  \node[anchor=north, font=\footnotesize\bfseries] at (6.55,0.35) {Scientific Literature Intelligence Platform};
+
+  % Use cases, primary column
+  \node[usecase] (uc01) at (4.4,-0.9)  {UC-01\\Discover papers on arXiv};
+  \node[usecase] (uc02) at (4.4,-2.1)  {UC-02\\Import paper from arXiv};
+  \node[usecase] (uc03) at (4.4,-3.3)  {UC-03\\Upload a PDF};
+  \node[usecase] (uc06) at (4.4,-4.5)  {UC-06\\Browse and manage corpus};
+  \node[usecase] (uc07) at (4.4,-5.7)  {UC-07\\Search passages};
+  \node[usecase] (uc08) at (4.4,-6.9)  {UC-08\\Ask a question};
+  \node[usecase] (uc10) at (4.4,-8.1)  {UC-10\\Summarise or extract paper};
+  \node[usecase] (uc11) at (4.4,-9.3)  {UC-11\\Synthesise and compare};
+  \node[usecase] (uc12) at (4.4,-10.5) {UC-12\\View question history};
+  \node[usecase] (uc13) at (4.4,-11.7) {UC-13\\View dashboard, settings,\\system status};
+  % Use cases, secondary column
+  \node[usecase] (uc04) at (8.7,-3.3)  {UC-04\\Track ingestion job};
+  \node[usecase] (uc05) at (8.7,-4.8)  {UC-05\\Retry failed job};
+  \node[usecase] (uc09) at (8.7,-11.1) {UC-09\\Inspect citation};
+
+  % Actors
+  \pic at (0,-5.8) {actor};
+  \node[align=center] at (0,-6.6) {Researcher};
+  \coordinate (res) at (0.35,-5.6);
+  \pic at (12.6,-2.6) {actor};
+  \node[align=center] at (12.6,-3.4) {\guillemotleft system\guillemotright\\arXiv};
+  \coordinate (arx) at (12.25,-2.4);
+  \pic at (12.6,-8.2) {actor};
+  \node[align=center] at (12.6,-9.0) {\guillemotleft system\guillemotright\\Ollama};
+  \coordinate (oll) at (12.25,-8.0);
+
+  % Researcher associations
+  \foreach \u in {uc01,uc02,uc03,uc06,uc07,uc08,uc10,uc11,uc12,uc13} {
+    \draw[assoc] (res) -- (\u.west);
+  }
+  % External system associations
+  \draw[assoc] (arx) -- (uc01.east);
+  \draw[assoc] (arx) -- (uc02.east);
+  \draw[assoc] (arx) -- (uc05.east);
+  \draw[assoc] (oll) -- (uc08.east);
+  \draw[assoc] (oll) -- (uc10.east);
+  \draw[assoc] (oll) -- (uc11.east);
+
+  % include / extend relationships
+  \draw[dep] (uc02.east) -- node[stereo, above, sloped] {\guillemotleft include\guillemotright} (uc04.north west);
+  \draw[dep] (uc03.east) -- node[stereo, above] {\guillemotleft include\guillemotright} (uc04.west);
+  \draw[dep] (uc05.north) -- node[stereo, right] {\guillemotleft extend\guillemotright} (uc04.south);
+  \draw[dep] (uc09.north west) -- node[stereo, above, sloped] {\guillemotleft extend\guillemotright} (uc08.east);
+  \draw[dep] (uc09.west) -- node[stereo, above, sloped] {\guillemotleft extend\guillemotright} (uc12.east);
+\end{tikzpicture}

@@ -1,0 +1,68 @@
+\chapter{API and Configuration Reference}\label{app:api}
+
+\section{REST Endpoints}
+
+All endpoints are under \code{/api/v1}; the OpenAPI document is served at \code{/api/v1/openapi.json}.
+
+{\small
+\begin{longtable}{@{}lp{5.6cm}p{5.2cm}@{}}
+  \caption{REST endpoints}\label{tab:endpoints} \\
+  \toprule
+  \textbf{Method} & \textbf{Path} & \textbf{Purpose} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Method} & \textbf{Path} & \textbf{Purpose} \\
+  \midrule
+  \endhead
+  GET & \code{/health} & Liveness \\
+  GET & \code{/ready} & Readiness per dependency \\
+  GET & \code{/arxiv/search?q=\&max\_results=} & Search arXiv \\
+  POST & \code{/papers/arxiv} & Import by arXiv identifier (202 with job) \\
+  POST & \code{/papers/upload} & Upload a PDF (multipart; 202 with job) \\
+  GET & \code{/jobs}, \code{/jobs/\{job\_id\}} & List jobs, job status \\
+  POST & \code{/jobs/\{job\_id\}/retry} & Retry a failed job \\
+  GET & \code{/papers}, \code{/papers/\{paper\_id\}} & List with filters, paper details \\
+  DELETE & \code{/papers/\{paper\_id\}} & Delete a paper, its chunks and file \\
+  GET & \code{/categories}, \code{/stats} & Corpus categories, dashboard statistics \\
+  POST & \code{/search} & Passage search (\code{query}, \code{top\_k}, \code{paper\_ids}, \code{search\_mode}) \\
+  POST & \code{/qa} & Ask a question \\
+  GET & \code{/qa}, \code{/qa/\{answer\_id\}} & History, one stored answer \\
+  POST & \code{/papers/\{paper\_id\}/summary} & Summarise a paper \\
+  POST & \code{/papers/\{paper\_id\}/extraction} & Structured extraction \\
+  GET & \code{/papers/\{paper\_id\}/latest/\{kind\}} & Latest summary or extraction \\
+  POST & \code{/synthesis}, \code{/compare} & Cross-paper synthesis, comparison table \\
+  GET & \code{/analyses/\{analysis\_id\}} & One stored analysis \\
+  GET & \code{/settings} & Read-only configuration (no credentials) \\
+  \bottomrule
+\end{longtable}
+}
+
+\section{Main Configuration Settings}
+
+Settings are environment variables with the prefix \code{SLIP\_} (\code{backend/app/core/config.py}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Main configuration settings}\label{tab:settings}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}llL@{}}
+    \toprule
+    \textbf{Setting} & \textbf{Default} & \textbf{Meaning} \\
+    \midrule
+    \code{SLIP\_OLLAMA\_MODEL} & \code{qwen2.5:3b} & Local generation model \\
+    \code{SLIP\_OLLAMA\_TIMEOUT\_SECONDS} & 60 & Generation timeout \\
+    \code{SLIP\_OLLAMA\_MAX\_TOKENS} & 512 & Maximum generated tokens \\
+    \code{SLIP\_SEARCH\_MODE} & \code{hybrid\_rerank} & \code{dense}, \code{bm25}, \code{hybrid} or \code{hybrid\_rerank} \\
+    \code{SLIP\_QA\_DEFAULT\_TOP\_K} & 6 & Passages retrieved for question answering \\
+    \code{SLIP\_QA\_MIN\_SCORE} & 0.30 & Minimum cosine similarity for evidence \\
+    \code{SLIP\_QA\_MAX\_CONTEXT\_CHARS} & 12000 & Evidence budget per question \\
+    \code{SLIP\_MAX\_PDF\_BYTES} & 50\,MB & Upload size limit \\
+    \code{SLIP\_MAX\_PDF\_PAGES} & 200 & Page limit \\
+    \code{SLIP\_CHUNK\_WINDOW\_TOKENS} & 256 & Chunk window (overlap 38) \\
+    \code{SLIP\_INGESTION\_WORKERS} & 1 & Concurrent ingestion jobs (1--4) \\
+    \code{SLIP\_CORS\_ORIGINS} & \code{["http://localhost:5173"]} & Allowed browser origins \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}

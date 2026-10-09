@@ -1,0 +1,129 @@
+\chapter{UML and Detailed Software Design}\label{ch:uml}
+
+This chapter presents five UML views of the system. Each diagram was drawn from the source code named in the
+comment at the top of its TikZ file under \code{report/figures/uml/}, and the class, operation and message names
+are those used in the code. The diagrams are rendered by TikZ when the report is compiled, so the editable source
+and the figure are the same file.
+
+\section{Use Case Diagram}
+
+\autoref{fig:uml-usecase} shows the system boundary, the primary actor (the researcher) and the two external
+systems that take part in use cases: arXiv supplies metadata and PDF files, and the local Ollama service generates
+answers and analyses. Importing or uploading a paper \emph{includes} tracking its ingestion job, because both
+requests return a job that the interface polls. Retrying a failed job \emph{extends} job tracking, since it happens
+only when a job has failed. Inspecting a citation \emph{extends} asking a question and viewing history: it is
+optional behaviour available wherever an answer with citations is shown. The evaluation harness is a maintainer
+command-line tool and is deliberately outside the boundary (\autoref{ch:requirements}).
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/uml/use-case}
+  \caption{UML use case diagram}\label{fig:uml-usecase}
+\end{figure}
+
+\section{Class Diagrams}
+
+The static structure is split into two diagrams to keep them legible. \autoref{fig:uml-class-domain} shows the
+persistent domain model from \code{backend/app/db/models.py}. A \code{Paper} owns at most one \code{Document} (the
+PDF currently behind it), which owns its \code{Chunk}s; deleting a paper cascades to both (composition). An
+\code{IngestionJob} produces at most one paper. Question history is modelled by \code{Query}, \code{Answer},
+\code{AnswerEvidence} and \code{AnswerCitation}: each citation resolves to at most one evidence row of the same
+answer (none if the label was invalid), and each evidence row is a snapshot of a chunk whose reference becomes
+empty if the chunk is later deleted. \code{Analysis} stores the identifiers of the papers it covers rather than a
+foreign key, shown as a dependency.
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/uml/class-domain}
+  \caption{UML class diagram, part 1: persistent domain model}\label{fig:uml-class-domain}
+\end{figure}
+
+\autoref{fig:uml-class-services} shows the service layer and the abstractions it depends on. The services depend on
+interfaces (\code{GenerationProvider}, \code{Embedder}, \code{RerankerProtocol}, \code{ArxivSource}), realised by the
+production classes; the tests substitute fakes for the same interfaces. Citation checking and the search queries
+are module-level functions, shown as \guillemotleft utility\guillemotright{} classes. Only public operations are listed,
+and \code{CorpusService}'s use of \code{FileStore} for deleting files is drawn; framework classes are omitted.
+
+\begin{sidewaysfigure}
+  \centering
+  \fitfigure{figures/uml/class-services}
+  \caption{UML class diagram, part 2: services and abstractions}\label{fig:uml-class-services}
+\end{sidewaysfigure}
+
+\section{Sequence Diagram}
+
+\autoref{fig:uml-sequence} follows a question from the interface to the answer and back, matching
+\code{QAService.ask}. After validation the service retrieves candidates (embedding, dense and lexical SQL, rank
+fusion and cross-encoder re-ranking inside \code{SearchService}), keeps passages whose cosine similarity is at least
+0.30 and labels them. The outer \code{alt} fragment shows the early abstention without a model call. In the other
+operand the model is called; the inner \code{alt} fragment separates provider failures (Ollama unreachable, a
+timeout, or output that does not validate against the schema), which are persisted with status \code{error} and
+returned as HTTP 503, 504 or 502, from the normal path, in which citations are checked and the outcome is persisted
+as \code{answered} or \code{insufficient\_evidence}. The diagram ends with the user opening a citation, which the
+interface resolves from the evidence already returned; no further request is made.
+
+\begin{sidewaysfigure}
+  \centering
+  \fitfigure{figures/uml/sequence}
+  \caption{UML sequence diagram: grounded question answering}\label{fig:uml-sequence}
+\end{sidewaysfigure}
+
+\section{Activity Diagram}
+
+\autoref{fig:uml-activity} models ingestion in two swimlanes. The request lane is synchronous: an arXiv identifier is
+parsed, or an uploaded file is read with a size limit, checked (PDF signature, encryption, page limit) and hashed.
+Invalid requests return 422 and duplicate uploads 409 before any job exists. Valid uploads are stored under their
+hash, a job is created (or the in-flight job for the same source is returned) and handed to the job runner, and the
+request returns 202 at the fork. The background lane follows \code{run\_job}: an arXiv job fetches metadata and
+finishes immediately if that version is already indexed with the current chunker; otherwise the PDF is downloaded
+(or the stored upload read), extracted page by page, chunked, embedded and written in one transaction. Any error
+raised inside the interruptible region---for example a network failure, HTTP 429 from arXiv, a PDF without a text
+layer, or an embedding failure---ends the job as \code{failed} with its message, and a rejected upload's file is
+deleted.
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/uml/activity}
+  \caption{UML activity diagram: paper ingestion}\label{fig:uml-activity}
+\end{figure}
+
+\section{Communication Diagram}
+
+\autoref{fig:uml-communication} shows the same interaction as \autoref{fig:uml-sequence} as a communication
+(collaboration) diagram. It emphasises which objects are linked: the route talks only to \code{QAService}, which is
+the single object that talks to the language model, the citation checker and the database for persistence, while
+\code{SearchService} encapsulates the embedder, the database queries and the re-ranker. Message numbers are nested
+to show that messages 1.1.1.1 to 1.1.1.3 happen during \code{search}, and guards mark the conditional messages:
+generation happens only when evidence passes the threshold, and citation checking only when generation produced
+schema-valid output.
+
+\begin{figure}[htbp]
+  \centering
+  \fitfigure{figures/uml/communication}
+  \caption{UML communication diagram: grounded question answering}\label{fig:uml-communication}
+\end{figure}
+
+\section{Consistency Between the Diagrams}
+
+\autoref{tab:uml-consistency} cross-checks the dynamic diagrams against each other and against the code.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Correspondence of sequence and communication messages}\label{tab:uml-consistency}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}llL@{}}
+    \toprule
+    \textbf{Sequence} & \textbf{Communication} & \textbf{Code} \\
+    \midrule
+    2, 3 & 1, 1.1 & \code{api/v1/qa.py: ask} $\rightarrow$ \code{QAService.ask} \\
+    5 & 1.1.1 & \code{SearchService.search} \\
+    6 & 1.1.1.1 & \code{SentenceTransformerEmbedder.embed} \\
+    7 & 1.1.1.2 & \code{search\_hybrid\_chunks} (dense and BM25 SQL, RRF) \\
+    8 & 1.1.1.3 & \code{CrossEncoderReranker.rerank} \\
+    10b & 1.1.2 & \code{OllamaProvider.generate} \\
+    11b & 1.1.3 & \code{check\_citations} \\
+    10a, 11a, 12 & 1.1.4 & \code{QAService.\_persist} \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}

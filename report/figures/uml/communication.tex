@@ -1,0 +1,53 @@
+% UML communication (collaboration) diagram: grounded question answering.
+% Same interaction as the sequence diagram, with objects, links and nested message numbers.
+% Return messages are omitted, as is usual in communication diagrams.
+% Source of truth: as for the sequence diagram (services/qa.py, services/search.py, generation/*).
+\begin{tikzpicture}[
+    font=\scriptsize,
+    obj/.style={draw, fill=white, align=center, minimum height=0.75cm, inner sep=3pt},
+    link/.style={thin},
+    msg/.style={font=\scriptsize, align=left, inner sep=1pt},
+    marr/.style={-{Stealth[length=1.6mm]}, thin}
+  ]
+  % Objects (underlined instance names)
+  \node[obj] (panel) at (0,0) {\underline{:QAPanel}};
+  \node[obj] (route) at (3.6,0) {\underline{:qa route}};
+  \node[obj] (qa) at (7.6,0) {\underline{:QAService}};
+  \node[obj] (ollama) at (12.4,0) {\underline{:OllamaProvider}};
+  \node[obj] (cit) at (12.4,-2.6) {\guillemotleft utility\guillemotright\\\underline{citations}};
+  \node[obj] (search) at (7.6,-3.6) {\underline{:SearchService}};
+  \node[obj] (db) at (3.0,-3.6) {\underline{:PostgreSQL (pgvector)}};
+  \node[obj] (emb) at (4.0,-7.0) {\underline{:SentenceTransformerEmbedder}};
+  \node[obj] (rr) at (11.0,-7.0) {\underline{:CrossEncoderReranker}};
+
+  % Links
+  \draw[link] (panel) -- (route);
+  \draw[link] (route) -- (qa);
+  \draw[link] (qa) -- (ollama);
+  \draw[link] (qa) -- (cit);
+  \draw[link] (qa) -- (search);
+  \draw[link] (qa) -- (db);
+  \draw[link] (search) -- (db);
+  \draw[link] (search) -- (emb);
+  \draw[link] (search) -- (rr);
+
+  % Messages; each arrow runs beside its link in the direction of the call
+  \draw[marr] (0.9,0.32) -- (2.7,0.32);
+  \node[msg, above] at (1.8,0.34) {1: POST /api/v1/qa};
+  \draw[marr] (4.6,0.32) -- (6.6,0.32);
+  \node[msg, above] at (5.6,0.34) {1.1: ask(question)};
+  \draw[marr] (7.9,-0.8) -- (7.9,-2.8);
+  \node[msg, right] at (7.95,-1.8) {1.1.1: search(\\question, k)};
+  \draw[marr] (6.53,-4.99) -- (5.45,-6.01);
+  \node[msg, right] at (6.15,-5.65) {1.1.1.1:\\embed([question])};
+  \draw[marr] (6.4,-3.95) -- (4.75,-3.95);
+  \node[msg, below] at (5.55,-4.0) {1.1.1.2: dense + BM25\\queries};
+  \draw[marr] (8.99,-4.59) -- (10.01,-5.61);
+  \node[msg, right] at (9.75,-4.85) {1.1.1.3: rerank(question,\\candidates, k)};
+  \draw[marr] (8.9,0.32) -- (11.0,0.32);
+  \node[msg, above] at (9.95,0.34) {1.1.2 [evidence $\geq$ 0.30]:\\generate(prompt, schema)};
+  \draw[marr] (9.42,-0.65) -- (10.62,-1.30);
+  \node[msg, anchor=south west] at (10.3,-0.95) {1.1.3: check\_citations(...)};
+  \draw[marr] (5.93,-1.02) -- (4.93,-2.15);
+  \node[msg, left] at (5.1,-1.3) {1.1.4: persist(answer,\\evidence, citations)};
+\end{tikzpicture}

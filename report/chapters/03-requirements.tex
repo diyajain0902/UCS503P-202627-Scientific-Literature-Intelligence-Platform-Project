@@ -1,0 +1,191 @@
+\chapter{Requirements Analysis}\label{ch:requirements}
+
+The canonical requirement register is version-controlled under \code{docs/requirements/}. Identifiers are
+permanent: functional requirements FR-01 to FR-26, infrastructure requirements IR-01 to IR-09 and non-functional
+requirements NFR-01 to NFR-16. This chapter summarises them and adds use-case identifiers (UC-01 to UC-13) for
+the UML model in \autoref{ch:uml}. The verification status of each requirement, determined in the final
+acceptance run of 9 October 2026, is given in \autoref{app:traceability}.
+
+\section{Stakeholders and User Roles}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Stakeholders and roles}\label{tab:stakeholders}
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    \textbf{Role} & \textbf{Interest and interaction} \\
+    \midrule
+    Researcher (user) & Imports and uploads papers, searches, asks questions, inspects citations, runs analyses. Single
+      user; no accounts. \\
+    Maintainer & Runs the evaluation harness and test suites, applies migrations, reads logs and decision records. \\
+    Course evaluators & Assess requirements, design, verification evidence and documentation. \\
+    arXiv (external system) & Supplies paper metadata and PDF files over HTTPS. \\
+    Ollama (external system) & Serves the local language model used for answers and analyses. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Functional Requirements}
+
+\autoref{tab:fr} lists the functional requirements with the priority recorded in the register. ``Required''
+requirements are mandatory for the MVP.
+
+{\small
+\begin{longtable}{@{}p{1.2cm}p{9.0cm}p{2.2cm}@{}}
+  \caption{Functional requirements}\label{tab:fr} \\
+  \toprule
+  \textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
+  \midrule
+  \endhead
+  FR-01 & Search the arXiv API by query or identifier and show metadata. & Required \\
+  FR-02 & Import an arXiv paper; re-importing a known identifier updates rather than duplicates. & Required \\
+  FR-03 & Upload a PDF with validation (type, size, pages, encryption, text layer) and safe storage. & Required \\
+  FR-04 & Page-aware text extraction; every character traceable to a page and offset. & Required \\
+  FR-05 & Deterministic chunking; chunks spanning pages record all pages. & Required \\
+  FR-06 & Local embeddings with \code{all-MiniLM-L6-v2}; dimension validated as 384. & Required \\
+  FR-07 & Persist papers, documents, chunks and embeddings in PostgreSQL with pgvector, constraints and migrations. & Required \\
+  FR-08 & Semantic search returning ranked passages with score, chunk, paper and pages; corpus filter. & Required \\
+  FR-09 & Grounded question answering with a local Ollama model, answering only from retrieved passages. & Required \\
+  FR-10 & Citations resolved on the server; unresolvable citations flagged, never shown as valid. & Required \\
+  FR-11 & Explicit insufficient-evidence response when context does not support an answer. & Required \\
+  FR-12 & Single-paper summary with provenance. & Required \\
+  FR-13 & Cross-paper synthesis with per-claim citations. & Required \\
+  FR-14 & Structured extraction (task, method, dataset, metric, result, limitations), each field cited or \code{unknown}. & Required \\
+  FR-15 & Multi-paper comparison table with caveats. & Required \\
+  FR-16 & Corpus browsing: list, filter, details, delete with confirmation. & Required \\
+  FR-17 & Ingestion job tracking with explicit states, actionable errors and retry. & Required \\
+  FR-18 & Query history with answers, citations, configuration and latency. & Required \\
+  FR-19 & Retrieval evaluation harness (Recall@$k$, MRR) on a versioned labelled set. & Required \\
+  FR-20 & Answer-quality evaluation: citation validity, groundedness, abstention, latency. & Required \\
+  FR-21 & Automated retrieval-quality gate in continuous integration. & Required \\
+  FR-22 & Dashboard summarising corpus, jobs and recent questions. & Recommended \\
+  FR-23 & Read-only settings view with models and dependency health. & Recommended \\
+  FR-24 & Hybrid dense and lexical retrieval with rank fusion. & Recommended \\
+  FR-25 & Cross-encoder re-ranking, adopted only if it improves the evaluation results. & Optional \\
+  FR-26 & Optical character recognition for scanned PDFs. & Optional (deferred) \\
+  \bottomrule
+\end{longtable}
+}
+
+\section{Infrastructure Requirements}
+
+IR-01 a versioned REST API (\code{/api/v1}) with typed schemas, a consistent error envelope and OpenAPI;
+IR-02 environment-based configuration with no secrets in version control; IR-03 Docker Compose for the database,
+backend and frontend; IR-04 continuous integration for lint, format, type checks, tests and build; IR-05 liveness
+and per-dependency readiness endpoints; IR-06 structured JSON logs with request identifiers and no document text;
+IR-07 an Ollama adapter with timeouts and error mapping; IR-08 background execution of ingestion jobs; IR-09
+reproducible setup, troubleshooting and handover documentation.
+
+\section{Non-Functional Requirements}
+
+Non-functional requirements are targets to be measured; none is claimed without a recorded run.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Non-functional requirements}\label{tab:nfr}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}llL@{}}
+    \toprule
+    \textbf{ID} & \textbf{Quality} & \textbf{Target} \\
+    \midrule
+    NFR-01 & Retrieval quality & Recall@5 $\geq 0.80$ on the pilot evaluation set \\
+    NFR-02 & Retrieval quality & MRR reported for every retrieval configuration \\
+    NFR-03 & Latency & 95th-percentile end-to-end question answering $\leq 3$\,s (hardware, model, warm/cold stated) \\
+    NFR-04 & Latency & Search latency reported separately from generation latency \\
+    NFR-05 & Availability & $\geq 99\%$ availability of search and Q\&A over a defined pilot window \\
+    NFR-06 & Integrity & 100\% of displayed citations resolve to persisted chunks \\
+    NFR-07 & Integrity & Abstention on unanswerable questions; precision and recall reported \\
+    NFR-08 & Reproducibility & Same corpus and configuration give identical chunks and rankings \\
+    NFR-09 & Reproducibility & Model, embedding model, chunk configuration, top-$k$ and prompt version recorded \\
+    NFR-10 & Security & Upload limits, path-traversal protection, parameterised SQL, CORS, secrets, prompt injection \\
+    NFR-11 & Privacy & No document text or secrets in logs; no data sent to hosted LLM services \\
+    NFR-12 & Resource bounds & Upload size, pages, question length, top-$k$, tokens, context and concurrency bounded \\
+    NFR-13 & Hardware fit & Runs on the reference laptop (16\,GB RAM, 4\,GB GPU, Windows 11) \\
+    NFR-14 & Maintainability & CI green on every pull request \\
+    NFR-15 & Accessibility & Keyboard navigation, labelled controls, usable at 360\,px width \\
+    NFR-16 & Graceful degradation & Search works without Ollama; Q\&A returns an explicit 503 \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+\section{Use Cases}
+
+\autoref{tab:usecases} lists the use cases realised by the implementation. They are drawn in the use-case diagram
+(\autoref{fig:uml-usecase}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Use cases}\label{tab:usecases}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lLll@{}}
+    \toprule
+    \textbf{ID} & \textbf{Use case} & \textbf{Actors} & \textbf{Requirements} \\
+    \midrule
+    UC-01 & Discover papers on arXiv & Researcher, arXiv & FR-01 \\
+    UC-02 & Import a paper from arXiv & Researcher, arXiv & FR-02, FR-04--FR-07 \\
+    UC-03 & Upload a PDF & Researcher & FR-03--FR-07 \\
+    UC-04 & Track an ingestion job (included by UC-02, UC-03) & Researcher & FR-17 \\
+    UC-05 & Retry a failed job (extends UC-04) & Researcher, arXiv & FR-17 \\
+    UC-06 & Browse and manage the corpus & Researcher & FR-16 \\
+    UC-07 & Search passages & Researcher & FR-08, FR-24, FR-25 \\
+    UC-08 & Ask a question & Researcher, Ollama & FR-09--FR-11 \\
+    UC-09 & Inspect a citation (extends UC-08, UC-12) & Researcher & FR-10 \\
+    UC-10 & Summarise or extract a paper & Researcher, Ollama & FR-12, FR-14 \\
+    UC-11 & Synthesise and compare papers & Researcher, Ollama & FR-13, FR-15 \\
+    UC-12 & View question history & Researcher & FR-18 \\
+    UC-13 & View dashboard, settings and system status & Researcher & FR-22, FR-23, IR-05 \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+The evaluation harness (FR-19 to FR-21) is a command-line tool used by the maintainer and in continuous integration;
+it is not part of the user-facing system and is therefore not drawn as a use case.
+
+\section{Assumptions and Constraints}
+
+\begin{itemize}
+  \item One user on one machine; all application ports bind to \code{127.0.0.1}; no authentication.
+  \item No hosted language model, ever, as a fallback (contract rule; ADR-0001). If Ollama is unavailable, the
+        system returns HTTP 503 with a reason.
+  \item Python 3.12, managed by \code{uv} without changing the machine's Python 3.14, because PyTorch and some
+        scientific packages often lag new Python releases on Windows (ADR-0004).
+  \item Text-based PDFs only; scanned PDFs are rejected.
+  \item The evaluation labels may be written by the AI assistant used by the team (ADR-0007); every item records its
+        labeller and review status, and reports state how many items a person reviewed.
+\end{itemize}
+
+\section{Software and Hardware Requirements}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Reference environment}\label{tab:env}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    \textbf{Item} & \textbf{Requirement / reference value} \\
+    \midrule
+    Hardware & AMD Ryzen 7 7435HS, 16\,GB RAM, NVIDIA RTX 3050 Laptop 4\,GB, Windows 11 \\
+    Runtime & Docker Desktop (WSL2) with Compose; Ollama on the host with \code{qwen2.5:3b} \\
+    Database & PostgreSQL 17 with pgvector 0.8.0 (container image \code{pgvector/pgvector:0.8.0-pg17}) \\
+    Backend & Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, PyMuPDF, sentence-transformers (CPU PyTorch) \\
+    Frontend & React, TypeScript, Vite, Vitest with Testing Library, oxlint; served by nginx 1.27 \\
+    Tooling & Ruff, mypy (strict), pytest, GitHub Actions, pip-audit, npm audit \\
+    \bottomrule
+  \end{tabularx}
+  }
+\end{table}
+
+\section{Acceptance Criteria}
+
+The register defines numbered acceptance criteria (AC-$xx$.$n$) for each functional requirement in
+\code{docs/requirements/acceptance-criteria.md}. The MVP was accepted on the following overall criterion: every
+mandatory user journey (discovery, import, upload, provenance, embedding, search, grounded answering with verified
+citations, abstention, analyses, corpus management, history, and graceful handling of invalid input and missing
+services) works against the running application with real components, and no release-blocking defect remains. The
+outcome (\autoref{ch:results}) was \emph{ready with documented limitations}.

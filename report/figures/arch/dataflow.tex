@@ -1,0 +1,37 @@
+% Data flow from source document to answer citation (provenance chain).
+% Source of truth: backend/app/ingestion/, retrieval/, services/qa.py, generation/citations.py.
+\begin{tikzpicture}[
+    font=\footnotesize,
+    proc/.style={draw, rounded corners=2pt, align=center, minimum height=9mm, text width=2.35cm, fill=white},
+    data/.style={draw, align=center, minimum height=7mm, text width=2.35cm, fill=black!6},
+    arr/.style={-{Stealth[length=2mm]}, thick}
+  ]
+  % Ingestion row
+  \node[data] (src) at (0,0) {arXiv ID or\\uploaded PDF};
+  \node[proc] (val) at (3.0,0) {Validate\\(magic bytes, size,\\pages, encryption)};
+  \node[proc] (ext) at (6.0,0) {Extract text per page\\(PyMuPDF)};
+  \node[proc] (chk) at (9.0,0) {Chunk: 256 tokens,\\38 overlap};
+  \node[proc] (emb) at (12.0,0) {Embed\\(MiniLM, 384-d)};
+  % Storage
+  \node[data, text width=4.6cm] (store) at (12.0,-2.3) {chunks: text, page\_start, page\_end,\\
+    char\_start, char\_end, embedding, text\_tsv};
+  % Query row
+  \node[data] (q) at (0,-4.6) {Question};
+  \node[proc] (ret) at (3.0,-4.6) {Dense + lexical search,\\RRF, cross-encoder};
+  \node[proc] (sel) at (6.0,-4.6) {Select evidence\\(cosine $\geq 0.30$)\\labels P1..Pn};
+  \node[proc] (gen) at (9.0,-4.6) {Ollama: claims\\citing labels\\(JSON schema)};
+  \node[proc] (cit) at (12.0,-4.6) {Resolve labels against\\supplied passages};
+  \node[data, text width=4.6cm] (ans) at (12.0,-6.7) {answer + evidence snapshots\\(paper, pages, text) + citations};
+
+  \draw[arr] (src) -- (val);
+  \draw[arr] (val) -- (ext);
+  \draw[arr] (ext) -- node[above, font=\scriptsize] {page offsets} (chk);
+  \draw[arr] (chk) -- (emb);
+  \draw[arr] (emb) -- (store);
+  \draw[arr] (q) -- (ret);
+  \draw[arr] (store.west) -| node[pos=0.25, above, font=\scriptsize] {ranked chunks with provenance} (ret.north);
+  \draw[arr] (ret) -- (sel);
+  \draw[arr] (sel) -- (gen);
+  \draw[arr] (gen) -- (cit);
+  \draw[arr] (cit) -- (ans);
+\end{tikzpicture}

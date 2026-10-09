@@ -1,0 +1,94 @@
+% UML sequence diagram: grounded question answering (POST /api/v1/qa).
+% Drawn for a landscape page (sidewaysfigure), about 21 cm x 13.6 cm.
+% Source of truth: frontend/src/features/qa/QAPanel.tsx, backend/app/api/v1/qa.py, services/qa.py (ask, _generate),
+% services/search.py, retrieval/search.py, retrieval/rerank.py, generation/ollama.py, generation/citations.py.
+\begin{tikzpicture}[
+    font=\scriptsize,
+    head/.style={draw, fill=white, minimum height=0.65cm, align=center, inner sep=2pt},
+    call/.style={-{Triangle[length=1.8mm, width=1.5mm]}},
+    ret/.style={dashed, -{Stealth[length=1.8mm]}},
+    act/.style={draw, fill=white},
+    frame/.style={draw, thin},
+    guard/.style={font=\tiny, anchor=north west, inner sep=1pt},
+    tag/.style={draw, font=\tiny\bfseries, fill=white, anchor=north west, inner sep=1.5pt}
+  ]
+  % Lifeline x positions
+  \def\xU{0} \def\xP{2.3} \def\xR{4.7} \def\xQ{7.3} \def\xS{10.0}
+  \def\xD{12.5} \def\xC{14.9} \def\xO{17.4} \def\xK{19.9}
+  \def\bottom{-13.1}
+
+  % Heads
+  \node[head, draw=none] (hU) at (\xU,0) {:Researcher};
+  \node[head] (hP) at (\xP,0) {:QAPanel};
+  \node[head] (hR) at (\xR,0) {:qa route\\\tiny POST /api/v1/qa};
+  \node[head] (hQ) at (\xQ,0) {:QAService};
+  \node[head] (hS) at (\xS,0) {:SearchService};
+  \node[head] (hD) at (\xD,0) {:PostgreSQL\\\tiny (pgvector)};
+  \node[head] (hC) at (\xC,0) {:CrossEncoder-\\Reranker};
+  \node[head] (hO) at (\xO,0) {:OllamaProvider};
+  \node[head] (hK) at (\xK,0) {\guillemotleft utility\guillemotright\\citations};
+  % Actor glyph above the researcher head
+  \draw[thick] (\xU,0.75) circle (0.13);
+  \draw[thick] (\xU,0.62) -- (\xU,0.3) (\xU-0.2,0.5) -- (\xU+0.2,0.5);
+
+  % Lifelines
+  \foreach \x/\h in {\xU/hU,\xP/hP,\xR/hR,\xQ/hQ,\xS/hS,\xD/hD,\xC/hC,\xO/hO,\xK/hK} {
+    \draw[dashed, black!60] (\h.south) -- (\x,\bottom);
+  }
+
+  % Activation bars
+  \draw[act] (\xR-0.08,-1.8) rectangle (\xR+0.08,-11.7);
+  \draw[act] (\xQ-0.08,-1.8) rectangle (\xQ+0.08,-11.35);
+  \draw[act] (\xS-0.08,-2.75) rectangle (\xS+0.08,-5.2);
+  \draw[act] (\xD-0.08,-3.7) rectangle (\xD+0.08,-4.05);
+  \draw[act] (\xC-0.08,-4.45) rectangle (\xC+0.08,-4.8);
+  \draw[act] (\xD-0.08,-6.55) rectangle (\xD+0.08,-6.75);
+  \draw[act] (\xO-0.08,-7.4) rectangle (\xO+0.08,-7.8);
+  \draw[act] (\xD-0.08,-8.65) rectangle (\xD+0.08,-8.85);
+  \draw[act] (\xK-0.08,-9.8) rectangle (\xK+0.08,-10.15);
+  \draw[act] (\xD-0.08,-10.55) rectangle (\xD+0.08,-10.75);
+
+  % Messages
+  \draw[call] (\xU,-1.0) -- node[above] {1: ask question} (\xP,-1.0);
+  \draw[call] (\xP,-1.4) -- node[above] {2: POST \{question\}} (\xR-0.08,-1.4);
+  \draw[call] (\xR+0.08,-1.8) -- node[above] {3: ask(question)} (\xQ-0.08,-1.8);
+  \draw[call] (\xQ+0.08,-2.1) -- ++(0.6,0) -- node[right] {4: validate length and top\_k} ++(0,-0.3) -- (\xQ+0.08,-2.4);
+  \draw[call] (\xQ+0.08,-2.75) -- node[above] {5: search(question, k)} (\xS-0.08,-2.75);
+  \draw[call] (\xS+0.08,-3.0) -- ++(0.6,0) -- node[right] {6: embed query (MiniLM)} ++(0,-0.3) -- (\xS+0.08,-3.3);
+  \draw[call] (\xS+0.08,-3.7) -- node[above] {7: dense + BM25 SQL} (\xD-0.08,-3.7);
+  \draw[ret] (\xD-0.08,-4.05) -- node[above] {chunks + provenance} (\xS+0.08,-4.05);
+  \draw[call] (\xS+0.08,-4.45) -- node[above, pos=0.6] {8: rerank(question, candidates, k)} (\xC-0.08,-4.45);
+  \draw[ret] (\xC-0.08,-4.8) -- node[above, pos=0.6] {re-ordered hits} (\xS+0.08,-4.8);
+  \draw[ret] (\xS-0.08,-5.2) -- node[above] {SearchResult} (\xQ+0.08,-5.2);
+  \draw[call] (\xQ+0.08,-5.45) -- ++(0.6,0) -- node[right] {9: select evidence (cosine $\geq$ 0.30), label P1..Pn}
+    ++(0,-0.3) -- (\xQ+0.08,-5.75);
+
+  % Outer alt fragment
+  \draw[frame] (\xQ-0.75,-6.0) rectangle (\xK+0.75,-11.0);
+  \node[tag] at (\xQ-0.75,-6.0) {alt};
+  \node[guard] at (\xQ-0.15,-6.05) {[no passage with cosine $\geq$ 0.30]: no model call};
+  \draw[call] (\xQ+0.08,-6.55) -- node[above, pos=0.5] {10a: persist(insufficient\_evidence)} (\xD-0.08,-6.55);
+  \draw[frame, dashed] (\xQ-0.75,-6.95) -- (\xK+0.75,-6.95);
+  \node[guard] at (\xQ-0.15,-7.0) {[else]};
+  \draw[call] (\xQ+0.08,-7.4) -- node[above, pos=0.5] {10b: generate(system prompt, delimited passages, JSON schema)} (\xO-0.08,-7.4);
+  \draw[ret] (\xO-0.08,-7.8) -- node[above, pos=0.5] {JSON text} (\xQ+0.08,-7.8);
+
+  % Inner alt fragment
+  \draw[frame] (\xQ-0.55,-8.05) rectangle (\xK+0.55,-10.9);
+  \node[tag] at (\xQ-0.55,-8.05) {alt};
+  \node[guard] at (\xQ+0.05,-8.1) {[Ollama unreachable / timeout / output not valid against the schema]};
+  \draw[call] (\xQ+0.08,-8.65) -- node[above, pos=0.5] {11a: persist(status = error)} (\xD-0.08,-8.65);
+  \draw[ret] (\xQ-0.08,-9.0) -- node[above] {raise 503/504/502} (\xR+0.08,-9.0);
+  \draw[frame, dashed] (\xQ-0.55,-9.25) -- (\xK+0.55,-9.25);
+  \node[guard] at (\xQ+0.05,-9.3) {[else]};
+  \draw[call] (\xQ+0.08,-9.8) -- node[above, pos=0.5] {11b: check\_citations(answer, supplied labels)} (\xK-0.08,-9.8);
+  \draw[ret] (\xK-0.08,-10.15) -- node[above, pos=0.5] {CheckedAnswer} (\xQ+0.08,-10.15);
+  \draw[call] (\xQ+0.08,-10.55) -- node[above, pos=0.5] {12: persist(answer, evidence, citations)} (\xD-0.08,-10.55);
+
+  % Returns and citation inspection
+  \draw[ret] (\xQ-0.08,-11.35) -- node[above] {Answer} (\xR+0.08,-11.35);
+  \draw[ret] (\xR-0.08,-11.7) -- node[above] {200 AnswerOut} (\xP,-11.7);
+  \draw[ret] (\xP,-12.05) -- node[above] {answer + chips} (\xU,-12.05);
+  \draw[call] (\xU,-12.4) -- node[above] {13: click chip P1} (\xP,-12.4);
+  \draw[ret] (\xP,-12.75) -- node[above] {source passage} (\xU,-12.75);
+\end{tikzpicture}
