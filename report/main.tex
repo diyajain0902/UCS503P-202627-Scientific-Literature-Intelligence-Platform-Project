@@ -2,6 +2,8 @@
 % Class: tietreport v1.0.4 (MIT, R. B. Venkataramaiyer), vendored as tietreport.cls.
 % Build (Overleaf: compiler pdfLaTeX, bibliography tool Biber):
 %   pdflatex main -> biber main -> pdflatex main -> pdflatex main
+% Diagrams: if figures.pdf (compiled from figures.tex) is present, its pages are included;
+% otherwise every TikZ diagram is drawn during this compile (slower). See README.md.
 \documentclass{tietreport}
 
 % ---------------------------------------------------------------------------
@@ -10,7 +12,6 @@
 % ---------------------------------------------------------------------------
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{microtype}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{longtable}
@@ -28,6 +29,11 @@
 \addbibresource{references.bib}
 
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue!50!black}
+% The class's header needs 14.5pt (fancyhdr warning); take the extra space from the top margin.
+\setlength{\headheight}{14.5pt}
+\addtolength{\topmargin}{-2.5pt}
+% Allow looser lines instead of overfull ones (long identifiers in typewriter font).
+\setlength{\emergencystretch}{3em}
 \captionsetup{font=small,labelfont=bf}
 \setlist{itemsep=2pt,topsep=4pt}
 \renewcommand{\arraystretch}{1.15}
@@ -37,16 +43,40 @@
   frame=single,framerule=0.4pt,xleftmargin=4pt,xrightmargin=4pt,
   keywordstyle=\bfseries,showstringspaces=false}
 
-% Shared notation
-\newcommand{\code}[1]{\texttt{#1}}
+% Shared notation. \code allows line breaks after hyphens and slashes in long identifiers.
+\newcommand{\code}[1]{\texttt{\hyphenchar\font=`\-\relax #1}}
 \newcommand{\recall}[1]{\mathrm{Recall@}#1}
 \newcommand{\placeholder}[1]{\textbf{[#1]}}
-% Include a TikZ figure file scaled down (never up) to the line width; \linewidth is also
-% correct inside rotated (sidewaysfigure) floats.
+
+% Figures. Page numbers of each diagram in figures.pdf (same order as figures.tex).
+\newcommand{\figpage}[2]{\expandafter\def\csname figpage:#1\endcsname{#2}}
+\figpage{figures/arch/deployment}{1}
+\figpage{figures/arch/dataflow}{2}
+\figpage{figures/uml/use-case}{3}
+\figpage{figures/uml/class-domain}{4}
+\figpage{figures/uml/class-services}{5}
+\figpage{figures/uml/sequence}{6}
+\figpage{figures/uml/activity}{7}
+\figpage{figures/uml/communication}{8}
+% Include a diagram scaled down (never up) to the line width; \linewidth is also correct
+% inside rotated (sidewaysfigure) floats. Uses the precompiled figures.pdf when present.
 \newsavebox{\figbox}
 \newcommand{\fitfigure}[1]{%
-  \sbox{\figbox}{\input{#1}}%
+  \IfFileExists{figures.pdf}%
+    {\sbox{\figbox}{\includegraphics[page=\csname figpage:#1\endcsname]{figures.pdf}}}%
+    {\sbox{\figbox}{\input{#1}}}%
   \ifdim\wd\figbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\figbox}}\else\usebox{\figbox}\fi}
+% For sidewaysfigure: fit the diagram to the rotated page (width \textheight, height leaves room
+% for the caption), scaling by whichever dimension is the tighter limit.
+\newcommand{\fitwide}[1]{%
+  \IfFileExists{figures.pdf}%
+    {\sbox{\figbox}{\includegraphics[page=\csname figpage:#1\endcsname]{figures.pdf}}}%
+    {\sbox{\figbox}{\input{#1}}}%
+  \ifnum\numexpr\wd\figbox/(\textheight/1000)\relax>\numexpr\ht\figbox/(\dimexpr0.82\textwidth\relax/1000)\relax
+    \resizebox{\textheight}{!}{\usebox{\figbox}}%
+  \else
+    \resizebox{!}{0.82\textwidth}{\usebox{\figbox}}%
+  \fi}
 
 % ---------------------------------------------------------------------------
 % Title page (tietreport commands). Bracketed values are placeholders for

@@ -3,6 +3,7 @@
 % Source of truth: frontend/src/features/qa/QAPanel.tsx, backend/app/api/v1/qa.py, services/qa.py (ask, _generate),
 % services/search.py, retrieval/search.py, retrieval/rerank.py, generation/ollama.py, generation/citations.py.
 \begin{tikzpicture}[
+    yscale=1.3,
     font=\scriptsize,
     head/.style={draw, fill=white, minimum height=0.65cm, align=center, inner sep=2pt},
     call/.style={-{Triangle[length=1.8mm, width=1.5mm]}},
@@ -56,7 +57,7 @@
   \draw[call] (\xQ+0.08,-2.75) -- node[above] {5: search(question, k)} (\xS-0.08,-2.75);
   \draw[call] (\xS+0.08,-3.0) -- ++(0.6,0) -- node[right] {6: embed query (MiniLM)} ++(0,-0.3) -- (\xS+0.08,-3.3);
   \draw[call] (\xS+0.08,-3.7) -- node[above] {7: dense + BM25 SQL} (\xD-0.08,-3.7);
-  \draw[ret] (\xD-0.08,-4.05) -- node[above] {chunks + provenance} (\xS+0.08,-4.05);
+  \draw[ret] (\xD-0.08,-4.05) -- node[above] {chunks} (\xS+0.08,-4.05);
   \draw[call] (\xS+0.08,-4.45) -- node[above, pos=0.6] {8: rerank(question, candidates, k)} (\xC-0.08,-4.45);
   \draw[ret] (\xC-0.08,-4.8) -- node[above, pos=0.6] {re-ordered hits} (\xS+0.08,-4.8);
   \draw[ret] (\xS-0.08,-5.2) -- node[above] {SearchResult} (\xQ+0.08,-5.2);

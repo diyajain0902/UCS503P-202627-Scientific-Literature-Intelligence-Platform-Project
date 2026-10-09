@@ -75,7 +75,7 @@ def main() -> int:
                 problems.append(f"{rel}:{no}: non-ASCII character {ch!r}")
         for no, line in text_lines:
             where = f"{rel}:{no}"
-            for target in re.findall(r"\\(?:input|include|fitfigure)\{([^}#]+)\}", line):
+            for target in re.findall(r"\\(?:input|include|fitfigure|fitwide)\{([^}#]+)\}", line):
                 candidate = ROOT / (target if target.endswith(".tex") else target + ".tex")
                 if candidate.exists():
                     files.append(candidate)
@@ -116,7 +116,7 @@ def main() -> int:
             no_cmds = re.sub(r"\\(label|ref|autoref|cite|input|include|url|href|addbibresource)\{[^}]*\}", "", no_math)
             if re.search(r"(?<!\\)_", no_cmds):
                 problems.append(f"{where}: unescaped _ outside math")
-            if re.search(r"(?<!\\)#", no_cmds) and "\\newcommand" not in no_cmds and "/.style" not in no_cmds \
+            if re.search(r"(?<!\\)#(?!\d)", no_cmds) and "\\newcommand" not in no_cmds and "/.style" not in no_cmds \
                     and "\\fitfigure" not in no_cmds and ".pic" not in no_cmds:
                 problems.append(f"{where}: unescaped # outside a macro definition")
         if depth != 0:
