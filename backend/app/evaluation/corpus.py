@@ -1,6 +1,8 @@
 """Build the evaluation corpus from the pinned manifest and check labels against it (AC-19.1)."""
 
 import logging
+import time
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -17,22 +19,44 @@ class CorpusMismatchError(RuntimeError):
     """The database does not contain exactly the pinned papers and versions."""
 
 
-def build_corpus(manifest: CorpusManifest, ingestion: IngestionService) -> list[str]:
-    """Ingest every pinned paper synchronously. Returns one status line per paper."""
+# arXiv rate-limits bursts (HTTP 429, timeouts), notably from shared CI runners. Failed papers are
+# retried after these waits; papers that already succeeded are not fetched again.
+RETRY_WAITS_SECONDS = (30.0, 90.0, 180.0)
+
+
+def build_corpus(
+    manifest: CorpusManifest,
+    ingestion: IngestionService,
+    sessions: sessionmaker[Session],
+    sleep: Callable[[float], None] = time.sleep,
+    retry_waits: Sequence[float] = RETRY_WAITS_SECONDS,
+) -> tuple[list[str], list[str]]:
+    """Ingest every pinned paper synchronously, retrying failures with backoff.
+
+    Returns status lines and the failures of the final attempt (empty when every paper is ready).
+    """
     lines: list[str] = []
-    for paper in manifest.papers:
-        job, _ = ingestion.request_arxiv_import(f"{paper.arxiv_id}v{paper.version}")
-        ingestion.run_job(job.id)
-        lines.append(f"{paper.arxiv_id}v{paper.version}: requested ({job.id})")
-    return lines
-
-
-def job_failures(sessions: sessionmaker[Session]) -> list[str]:
-    with sessions() as session:
-        jobs = session.scalars(
-            select(IngestionJob).where(IngestionJob.state == JobState.FAILED.value)
-        ).all()
-    return [f"{j.source_ref}: {j.error}" for j in jobs]
+    pending = [f"{paper.arxiv_id}v{paper.version}" for paper in manifest.papers]
+    failures: list[str] = []
+    for attempt in range(len(retry_waits) + 1):
+        if attempt:
+            wait = retry_waits[attempt - 1]
+            lines.append(f"retrying {len(pending)} paper(s) after {wait:.0f} s")
+            sleep(wait)
+        failures = []
+        for ref in pending:
+            job, _ = ingestion.request_arxiv_import(ref)
+            ingestion.run_job(job.id)
+            with sessions() as session:
+                done = session.get(IngestionJob, job.id)
+            if done is not None and done.state == JobState.FAILED.value:
+                failures.append(f"{ref}: {done.error}")
+            else:
+                lines.append(f"{ref}: {done.state if done else 'unknown'} ({job.id})")
+        pending = [failure.split(":", 1)[0] for failure in failures]
+        if not pending:
+            break
+    return lines, failures
 
 
 def verify_corpus(manifest: CorpusManifest, sessions: sessionmaker[Session]) -> None:

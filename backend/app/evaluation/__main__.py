@@ -21,7 +21,6 @@ from app.evaluation.corpus import (
     CorpusMismatchError,
     build_corpus,
     check_labels,
-    job_failures,
     verify_corpus,
 )
 from app.evaluation.dataset import EVAL_DIR, load_dataset, load_manifest
@@ -93,9 +92,9 @@ def main(argv: list[str] | None = None) -> int:
     manifest = load_manifest(args.manifest.resolve())
     try:
         if args.command == "build-corpus":
-            for line in build_corpus(manifest, container.ingestion):
+            lines, failures = build_corpus(manifest, container.ingestion, container.session_factory)
+            for line in lines:
                 print(line)
-            failures = job_failures(container.session_factory)
             for failure in failures:
                 _fail(f"FAILED {failure}")
             try:
