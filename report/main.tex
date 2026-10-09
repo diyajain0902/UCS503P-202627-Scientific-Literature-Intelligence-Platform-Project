@@ -66,6 +66,17 @@
     {\sbox{\figbox}{\includegraphics[page=\csname figpage:#1\endcsname]{figures.pdf}}}%
     {\sbox{\figbox}{\input{#1}}}%
   \ifdim\wd\figbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\figbox}}\else\usebox{\figbox}\fi}
+% For sidewaysfigure: fit the diagram to the rotated page (width \textheight, height leaves room
+% for the caption), scaling by whichever dimension is the tighter limit.
+\newcommand{\fitwide}[1]{%
+  \IfFileExists{figures.pdf}%
+    {\sbox{\figbox}{\includegraphics[page=\csname figpage:#1\endcsname]{figures.pdf}}}%
+    {\sbox{\figbox}{\input{#1}}}%
+  \ifnum\numexpr\wd\figbox/(\textheight/1000)\relax>\numexpr\ht\figbox/(\dimexpr0.82\textwidth\relax/1000)\relax
+    \resizebox{\textheight}{!}{\usebox{\figbox}}%
+  \else
+    \resizebox{!}{0.82\textwidth}{\usebox{\figbox}}%
+  \fi}
 
 % ---------------------------------------------------------------------------
 % Title page (tietreport commands). Bracketed values are placeholders for

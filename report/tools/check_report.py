@@ -75,7 +75,7 @@ def main() -> int:
                 problems.append(f"{rel}:{no}: non-ASCII character {ch!r}")
         for no, line in text_lines:
             where = f"{rel}:{no}"
-            for target in re.findall(r"\\(?:input|include|fitfigure)\{([^}#]+)\}", line):
+            for target in re.findall(r"\\(?:input|include|fitfigure|fitwide)\{([^}#]+)\}", line):
                 candidate = ROOT / (target if target.endswith(".tex") else target + ".tex")
                 if candidate.exists():
                     files.append(candidate)

@@ -2,8 +2,9 @@
 % Source of truth: backend/app/api/v1/routes.py + corpus.py (requests), services/ingestion.py
 % (request_arxiv_import, request_upload, run_job, _prepare, _persist), services/jobs.py (JobRunner).
 \begin{tikzpicture}[
+    yscale=1.25,
     font=\scriptsize,
-    action/.style={draw, rounded corners=5pt, align=center, text width=2.75cm, minimum height=0.62cm,
+    action/.style={draw, rounded corners=5pt, align=center, text width=3.1cm, minimum height=0.62cm,
       inner sep=2pt, fill=white},
     decision/.style={draw, diamond, aspect=1.6, minimum width=0.55cm, minimum height=0.4cm, inner sep=0pt,
       fill=white},
@@ -51,7 +52,7 @@
 
   % ---- Lane 2: background processing inside an interruptible region
   \draw[dashed, rounded corners=8pt] (7.5,0.2) rectangle (15.3,-9.15);
-  \node[action] (p1) at (11.2,-0.45) {state = fetching (attempts + 1)};
+  \node[action, text width=3.8cm] (p1) at (11.2,-0.45) {state = fetching (attempts + 1)};
   \node[decision] (d3) at (11.2,-1.3) {};
   \node[action] (a2) at (9.2,-2.3) {Fetch arXiv metadata};
   \node[decision] (d4) at (9.2,-3.25) {};
@@ -60,10 +61,10 @@
   \node[action] (a4) at (9.2,-4.3) {Download PDF (size-capped)};
   \node[action, text width=2.2cm] (u2) at (13.9,-2.3) {Read stored upload};
   \node[decision] (m2) at (11.2,-5.05) {};
-  \node[action] (e1) at (11.2,-5.85) {state = extracting: text per page and page offsets (PyMuPDF)};
-  \node[action] (e2) at (11.2,-6.85) {state = chunking: 256-token windows, 38 overlap};
-  \node[action] (e3) at (11.2,-7.7) {state = embedding: MiniLM, batched};
-  \node[action] (e4) at (11.2,-8.55) {Write paper, document, chunks in one transaction};
+  \node[action, text width=3.8cm] (e1) at (11.2,-5.85) {state = extracting: text per page and page offsets (PyMuPDF)};
+  \node[action, text width=3.8cm] (e2) at (11.2,-6.85) {state = chunking: 256-token windows, 38 overlap};
+  \node[action, text width=3.8cm] (e3) at (11.2,-7.7) {state = embedding: MiniLM, batched};
+  \node[action, text width=3.8cm] (e4) at (11.2,-8.55) {Write paper, document, chunks in one transaction};
   \node[action] (e5) at (11.2,-9.75) {state = ready};
   \node[final] (f4) at (11.2,-10.6) {};
   \node[action, text width=2.6cm] (fail) at (14.1,-10.0) {state = failed; error stored; rejected upload file deleted};
