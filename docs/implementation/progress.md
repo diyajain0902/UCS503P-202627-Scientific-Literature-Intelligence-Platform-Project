@@ -30,6 +30,33 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — Protocol step 5b: MVP security and privacy audit (branch `chore/step5b-mvp-security-audit`)
+
+Branched from `main` at `1ab4a0b` (step 4, PR #11, merged). Report: `docs/security/mvp-security-audit.md`;
+checklist: `docs/security/mvp-security-checklist.md`. A practical review, not a penetration test.
+
+**Probes against the running stack:** non-PDF, truncated, 51 MB and 60 MB uploads were rejected (422/422/422/413);
+an upload with a traversal filename was stored as `<sha256>.pdf` inside storage; injection-style search and filter
+inputs left the tables intact; invalid IDs and oversized inputs returned 404/422 without internal details; CORS
+blocked a foreign origin; no secrets in the git history or the logs.
+
+**Findings:**
+- **High SEC-01:** Ollama listens on `0.0.0.0:11434` (machine `OLLAMA_HOST=0.0.0.0`, Public-profile firewall Allow
+  rules, active network Public). Host setting; **left to the owner** with exact steps (I did not change system
+  settings).
+- **Low SEC-03:** uvicorn access log recorded query strings. Fixed (`--no-access-log`) and verified on the rebuilt
+  stack.
+- **Low SEC-04:** no catch-all error envelope. Fixed and tested.
+- Medium SEC-02 (superuser DB role), SEC-05 (no parse timeout), SEC-08 (unpinned model revisions): still open.
+- Correction: the upload byte cap *is* tested; `docs/security.md` said otherwise.
+
+**Checks:** unit **137 passed**; `integration or model` **81 passed**; `ollama` **3 passed**; `e2e` on the rebuilt
+stack **7 passed**; ruff, format, mypy strict (78 files) pass; frontend lint, typecheck pass, **24 passed**;
+`npm audit` 0 vulnerabilities. The probe upload was deleted afterwards (204).
+
+**Conclusion:** MVP security checks passed with documented limitations (SEC-01 must be fixed on the host before
+any demo on a shared network).
+
 ## 2026-10-09 — Protocol step 4: RAG evaluation audit (branch `chore/step4-rag-evaluation-audit`)
 
 Branched from `main` at `9adc518` (M7, PR #10, merged). Report: `docs/evaluation/rag-evaluation-report.md`, plus

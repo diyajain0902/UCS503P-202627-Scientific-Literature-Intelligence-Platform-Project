@@ -9,7 +9,7 @@ resolved first, plus explicit team authorization.
 
 | Area | Control | Where | Evidence |
 |------|---------|-------|----------|
-| Upload size | Streamed read, rejected above `SLIP_MAX_PDF_BYTES` (50 MB); nginx `client_max_body_size 55m` | `api/v1/corpus.py`, `frontend/nginx.conf` | Code review only (no automated test of the byte cap) |
+| Upload size | Streamed read, rejected above `SLIP_MAX_PDF_BYTES` (50 MB); nginx `client_max_body_size 55m` | `api/v1/corpus.py`, `frontend/nginx.conf` | `test_corpus_management.py::test_invalid_uploads_rejected_before_any_job[too-large]`; live probe 51 MB → 422, 60 MB → 413 (step 5b) |
 | Upload content | `%PDF-` magic bytes; corrupt, encrypted, zero-page, > `SLIP_MAX_PDF_PAGES` (200) rejected **before** a job is created; text-less (scanned) PDFs fail the job and the file is deleted | `ingestion/pdf.py`, `services/ingestion.py` | `test_pdf.py` (pages, encrypted), `test_corpus_management.py` (page limit, encrypted, scanned) |
 | Duplicates | SHA-256 of the bytes; re-upload → 409 | `services/ingestion.py` | `test_corpus_management.py` |
 | Storage paths | Server-generated keys from SHA-256 only; keys validated; resolved path must stay under the storage root; user filenames are never used as paths | `ingestion/storage.py` | `test_storage.py::test_rejects_unsafe_keys` |
@@ -19,9 +19,9 @@ resolved first, plus explicit team authorization.
 | Resource bounds | Query ≤ 1,000 chars; search top_k ≤ 50; Q&A top_k ≤ 10, question ≤ 1,000 chars, context ≤ 12,000 chars; generation ≤ 512 tokens, `num_ctx` 4096, timeout 60 s; 1 ingestion worker; pagination caps; synthesis/compare 2–5 papers | `core/config.py`, `api/v1/*` | `test_api_validation.py` (search, pagination), `test_config.py` |
 | CORS | Allow-list from `SLIP_CORS_ORIGINS`; methods GET/POST/DELETE; header `Content-Type` only | `main.py` | `test_health.py` |
 | HTTP headers | `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, CSP `default-src 'self'` (inline styles allowed), `server_tokens off` | `frontend/nginx.conf` | Verified with `curl -I` in M7 (progress log) |
-| Errors | Typed domain errors → status + `{"error": {code, message}}`; no stack traces in responses | `core/errors.py` | `test_search_integration.py::test_unknown_ids_return_404_envelope` |
+| Errors | Typed domain errors → status + `{"error": {code, message}}`; unexpected errors → fixed `internal_error` message, details logged server-side only | `core/errors.py` | `test_search_integration.py::test_unknown_ids_return_404_envelope`; `test_security_regressions.py` |
 | Secrets | `.env` git-ignored; only `.env.example` committed; Compose refuses to start without `POSTGRES_PASSWORD`; settings endpoint shows no credentials | `.gitignore`, `docker-compose.yml`, `api/v1/corpus.py` | `git ls-files` check (M7 audit); `test_corpus_management.py::test_stats_and_settings` |
-| Logging (NFR-11) | JSON logs with event names, IDs, counts, durations; no question text, passage text, or document contents | all `logger.*` calls | Code review of every log call (M7 audit) |
+| Logging (NFR-11) | JSON logs with event names, IDs, counts, durations; no question text, passage text, document contents, or query strings (uvicorn access log disabled, step 5b) | all `logger.*` calls | Code review of every log call (M7 audit) |
 | No hosted LLM (NFR-11) | Generation only through the local Ollama adapter; no hosted provider exists in code; Ollama down → 503 | `generation/ollama.py`, ADR-0001 | `test_generation.py::test_ollama_bad_responses`, `test_qa_integration.py` |
 | Artifacts | PDFs, model weights, DB dumps, caches git-ignored | `.gitignore` | `git ls-files` check (M7 audit) |
 | Container | Backend runs as non-root UID 10001; all ports on `127.0.0.1` | `backend/Dockerfile`, `docker-compose.yml` | — |
@@ -45,3 +45,6 @@ resolved first, plus explicit team authorization.
 | S5 | Hugging Face models are pinned by name, not revision, and downloaded at runtime. | Open (supply-chain and reproducibility). Pin `revision=` or vendor the weights into the image. |
 | S6 | `torch` comes from the PyTorch CPU index (`+cpu` build) and is skipped by `pip-audit`. | Accepted. Check PyTorch security advisories by hand when bumping the lock. |
 | S7 | Upload `Content-Type` is not checked. | Accepted. The magic-byte check plus a full PyMuPDF open is stronger than trusting the client-sent type. |
+| S8 | **Ollama listens on all interfaces** (`OLLAMA_HOST=0.0.0.0` machine-wide, firewall Allow rules on the Public profile). Its unauthenticated API is reachable from the local network | **Open, High, host setting.** The owner must fix it: `docs/security/mvp-security-audit.md` §6, step 4 |
+
+MVP audit (step 5b, second pass): `docs/security/mvp-security-audit.md` and `docs/security/mvp-security-checklist.md`.
