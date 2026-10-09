@@ -3,9 +3,15 @@
 Every error response uses the envelope ``{"error": {"code": str, "message": str}}``.
 """
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
+
+INTERNAL_ERROR_MESSAGE = "An internal error occurred. Details were written to the server log."
 
 
 class AppError(Exception):
@@ -88,3 +94,10 @@ def register_error_handlers(app: FastAPI) -> None:
             f"{location}: {first.get('msg', 'invalid request')}" if location else "invalid request"
         )
         return _envelope("invalid_input", message, 422)
+
+    @app.exception_handler(Exception)
+    async def _unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+        # Details (type, message, traceback) go to the server log only; the client gets a fixed
+        # message so file paths, SQL, or configuration never leak (security audit, step 5b).
+        logger.error("unhandled_error", exc_info=exc)
+        return _envelope("internal_error", INTERNAL_ERROR_MESSAGE, 500)

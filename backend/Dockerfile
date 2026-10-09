@@ -20,4 +20,5 @@ RUN useradd --create-home --uid 10001 slip && mkdir -p /data /models && chown sl
 USER slip
 
 EXPOSE 8000
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# --no-access-log: the app logs each request itself (path, status, duration) without query strings.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log"]
