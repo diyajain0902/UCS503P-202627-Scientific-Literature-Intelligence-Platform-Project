@@ -25,6 +25,8 @@ from app.evaluation.corpus import (
     verify_corpus,
 )
 from app.evaluation.dataset import EVAL_DIR, load_dataset, load_manifest
+from app.evaluation.profile import profile_retrieval
+from app.evaluation.provenance import check_provenance
 from app.evaluation.runner import (
     base_record,
     measure_cold_starts,
@@ -32,6 +34,7 @@ from app.evaluation.runner import (
     run_retrieval,
     write_record,
 )
+from app.ingestion.storage import FileStore
 
 
 def _fail(message: str) -> None:
@@ -43,7 +46,17 @@ def _fail(message: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.evaluation")
-    parser.add_argument("command", choices=["build-corpus", "check-labels", "retrieval", "qa"])
+    parser.add_argument(
+        "command",
+        choices=[
+            "build-corpus",
+            "check-labels",
+            "check-provenance",
+            "profile-retrieval",
+            "retrieval",
+            "qa",
+        ],
+    )
     parser.add_argument("--manifest", type=Path, default=EVAL_DIR / "corpus.json")
     parser.add_argument("--dataset", type=Path, default=EVAL_DIR / "qa_v1.json")
     parser.add_argument("--runs-dir", type=Path, default=EVAL_DIR / "runs")
@@ -94,6 +107,18 @@ def main(argv: list[str] | None = None) -> int:
             return 1 if failures else 0
 
         verify_corpus(manifest, container.session_factory)
+        if args.command == "check-provenance":
+            report = check_provenance(
+                container.session_factory, FileStore(settings.storage_dir), settings.max_pdf_pages
+            )
+            for problem in report.problems:
+                _fail(f"PROVENANCE {problem}")
+            print(
+                f"provenance {'ok' if report.ok else 'FAILED'}: {report.documents} documents, "
+                f"{report.chunks} chunks ({report.multi_page_chunks} span two or more pages), "
+                f"{len(report.problems)} problems"
+            )
+            return 0 if report.ok else 3
         dataset = load_dataset(args.dataset.resolve())
         problems = check_labels(dataset, container.session_factory)
         for p in problems:
@@ -108,7 +133,23 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         record = base_record(args.command, dataset, args.dataset.resolve(), args.manifest.resolve())
-        if args.command == "retrieval":
+        if args.command == "profile-retrieval":
+            if container.reranker is None:
+                raise SystemExit("profile-retrieval needs the reranker (SLIP_RERANKER_ENABLED)")
+            container.embedder.warm_up()
+            container.reranker.warm_up()
+            record.update(
+                profile_retrieval(
+                    dataset,
+                    container.session_factory,
+                    container.embedder,
+                    container.reranker,
+                    args.top_k,
+                    settings.hybrid_candidate_multiplier,
+                    settings.hybrid_rrf_k,
+                )
+            )
+        elif args.command == "retrieval":
             record.update(
                 run_retrieval(
                     dataset,

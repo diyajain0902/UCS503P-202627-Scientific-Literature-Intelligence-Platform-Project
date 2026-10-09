@@ -162,3 +162,10 @@ Same corpus and dataset as §6, top_k 10, AC power, after migration 0006. ADR-00
 
 The probe is described in `docs/operations.md` §5. Each pilot window's log is committed under `eval/uptime/`, and
 the progress log states its results.
+
+## 9. Step 4 RAG evaluation audit (2026-10-09)
+
+Full audit in `docs/evaluation/`: `rag-evaluation-report.md` (findings RA-01–RA-09),
+`dataset-and-annotation-methodology.md`, `experiment-log.md`, `known-failure-modes.md`. New commands:
+`python -m app.evaluation check-provenance` (chunks against their original PDFs; set `SLIP_STORAGE_DIR` to the
+eval storage) and `python -m app.evaluation profile-retrieval` (latency per stage, context redundancy).

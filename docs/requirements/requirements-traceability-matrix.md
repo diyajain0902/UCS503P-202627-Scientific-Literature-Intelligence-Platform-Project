@@ -3,7 +3,7 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-09 (Milestone 7).
+Last updated: 2026-10-09 (Step 4 RAG evaluation audit; findings RA-01–RA-09 in `docs/evaluation/rag-evaluation-report.md`).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|

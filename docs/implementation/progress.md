@@ -30,6 +30,31 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — Protocol step 4: RAG evaluation audit (branch `chore/step4-rag-evaluation-audit`)
+
+Branched from `main` at `9adc518` (M7, PR #10, merged). Report: `docs/evaluation/rag-evaluation-report.md`, plus
+the dataset methodology, experiment log, and known failure modes in `docs/evaluation/`.
+
+**System behaviour unchanged.** Two read-only evaluation commands were added and committed before any measurement
+(`03fb705`): `check-provenance` and `profile-retrieval`. A regression test for the provenance check was added.
+
+**Results (clean commit `03fb705`, AC power):** baselines reproduced exactly (dense R@5 0.700, MRR 0.416;
+hybrid_rerank R@5 0.875, MRR 0.701). Provenance: 20 PDFs, 1,654 chunks, 0 problems. Citation integrity over all
+stored eval answers: 422/422 valid citations resolve to evidence of the same answer; 2,364/2,364 evidence snapshots
+match their chunks. Retrieval stage profile at top_k 6: cross-encoder 895 ms p50 of about 973 ms retrieval;
+47 neighbour-chunk pairs in 300 top-6 slots. HNSW index not used (exact sequential scan). `pytest -m ollama`
+3/3, including prompt injection.
+
+**Spot check of 14 claims (by the assistant, not human):** 10 supported and responsive, 1 non-responsive, 1
+wrong-paper answer (q002), 2 not supported by the cited passage (q033, q040). Judge agreement 11/14.
+
+**Findings:** no critical. **High:** RA-01 wrong-paper answers (q050, q002); RA-02 valid citation but unsupported
+claim. Both are open: fixing them needs held-out data or new components (team decision). Medium: RA-03 labels and
+selection on the test set, RA-04 NFR-03 not met, RA-05 no "uncertain" status or clarification, RA-06 HNSW unused,
+RA-07 dataset coverage gaps.
+
+**Checks:** ruff and mypy strict (77 files) pass; `tests/test_eval_integration.py` 5 passed; unit suite unchanged.
+
 ## 2026-10-09 — Milestone 7: Release readiness, M6 validation, and protocol audits (branch `feature/m7-release-readiness`)
 
 Branched from `main` at `4eff300` (M6, PR #9, merged). The team asked for M7 together with all missing documents,

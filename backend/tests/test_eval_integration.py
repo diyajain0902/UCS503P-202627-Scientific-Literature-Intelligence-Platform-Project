@@ -148,3 +148,26 @@ def test_qa_run_and_record(container: Container, tmp_path: Path) -> None:
     stored = json.loads(path.read_text(encoding="utf-8"))
     assert stored["metrics"] == metrics
     assert stored["config"]["prompt_version"] == "qa-v1"
+
+
+def test_provenance_check_passes_on_ingested_corpus_and_detects_tampering(
+    container: Container, sessions: sessionmaker[Session], tmp_path: Path
+) -> None:
+    """Stored chunks match a re-extraction of their PDFs; a wrong page number is reported."""
+    from sqlalchemy import select, update
+
+    from app.db.models import Chunk
+    from app.evaluation.provenance import check_provenance
+    from app.ingestion.storage import FileStore
+
+    store = FileStore(tmp_path)  # the test container stores PDFs here
+    report = check_provenance(sessions, store, container.settings.max_pdf_pages)
+    assert report.ok, report.problems
+    assert report.documents == 2 and report.chunks > 0
+
+    with sessions() as session:
+        chunk_id = session.scalars(select(Chunk.id).limit(1)).one()
+        session.execute(update(Chunk).where(Chunk.id == chunk_id).values(page_start=2, page_end=2))
+        session.commit()
+    report = check_provenance(sessions, store, container.settings.max_pdf_pages)
+    assert any("pages 2-2" in p for p in report.problems)
