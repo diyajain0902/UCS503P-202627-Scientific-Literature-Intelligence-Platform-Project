@@ -31,3 +31,4 @@ Each milestone lands on its own branch(es) and merges to `main` via PR after the
 - M0 done (PR #2) · M1 done (PRs #3, #4) · M2 done (PR #5) · M3 done (PR #6) · M4 done (PR #7) · M5 done (PR #8) · M6 done (PR #9; defects fixed in M7) · M7 delivered on `feature/m7-release-readiness`, awaiting approval.
 - Protocol audits (done late, in M7): step 4 RAG evaluation, step 5a security and privacy (first pass), step 6 CI/CD and reproducibility, in `docs/audits/`. Remaining: step 5b (security second pass) and step 7 (final acceptance).
 - Deviation: the M6 small-to-big chunking experiment was not run (deferred; `docs/handover.md` §4).
+- Protocol steps 4, 5b, 6 and the MVP reproducibility check done; **step 7 (final acceptance) delivered: MVP READY WITH DOCUMENTED LIMITATIONS** (`docs/release/`).
