@@ -30,6 +30,39 @@ Branched from up-to-date `main` (M5 PR #8 merged).
 - Backend: ruff, format, mypy strict (71 files) pass; unit **128 passed**; integration `pytest -m integration` **71 passed**.
 - Frontend: oxlint, typecheck pass; `npm test` **24 passed**.
 
+## 2026-10-09 — Protocol step 7: MVP final acceptance (branch `docs/mvp-final-acceptance`)
+
+Built on `chore/mvp-reproducibility-check` (not yet merged). Reports: `docs/release/mvp-acceptance-report.md`,
+`mvp-requirements-matrix.md`, and `mvp-known-limitations.md`.
+
+**Outcome: MVP READY WITH DOCUMENTED LIMITATIONS.**
+
+**Live journeys on the rebuilt stack (real components):**
+- arXiv discovery and import (idempotent); upload of a real 5-page paper.
+- Provenance re-check of all stored PDFs: 4 documents, 210 chunks, 0 problems.
+- Embeddings 210/210 at 384 dimensions; search.
+- Grounded answer with citations verified in SQL and in the UI inspector.
+- Abstention on an unsupported question.
+- Invalid input → 422; DB down → 503; Ollama down → 503 while search still works.
+- Summary, extraction, synthesis, compare; filters and delete. The papers added for testing were deleted.
+
+**Defect fixed:** arXiv title search with stop words returned 0 results (`all:is` matches nothing). Stop words are
+now dropped; regression test added; live title search returns results.
+
+**Checks:** ruff, format, mypy pass; unit **140**; integration + model **83** (0 skipped); ollama **3**; e2e **7**;
+network 1 failed during arXiv 429, passed on rerun; frontend **24**, build OK; `npm audit` 0 (after a registry
+error on the first attempt); CI on `main` @ `4d31e7b` green.
+
+**Docs:** Mermaid deployment, ingestion and Q&A diagrams in `docs/architecture/overview.md`; README rewritten as
+the submission overview (functionality, documentation index, Ollama setup, migrations, demonstration).
+
+**Open (disclosed):**
+- NFR-03 failed (p95 ≈ 4.5 s).
+- RA-01 and RA-02.
+- Labels not human-reviewed.
+- SEC-01 (host fix).
+- Only a 25-minute availability pilot.
+
 ## 2026-10-09 — MVP CI/CD and reproducibility check (branch `chore/mvp-reproducibility-check`)
 
 Fresh clone outside OneDrive, new `.env`, separate Compose project with new volumes (deleted afterwards); the

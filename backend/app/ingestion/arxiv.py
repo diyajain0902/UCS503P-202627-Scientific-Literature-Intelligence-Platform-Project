@@ -147,18 +147,66 @@ def parse_atom_feed(xml: bytes) -> list[ArxivMetadata]:
 
 
 _QUERY_TERM = re.compile(r"[\w.-]+", re.UNICODE)
+# arXiv's index drops these words, so an ``all:<stop word>`` clause matches nothing and, because
+# every clause is AND-ed, a title such as "Attention Is All You Need" found no papers (MVP
+# acceptance check). They are removed unless the query consists of nothing else.
+_STOP_WORDS = frozenset(
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "but",
+        "by",
+        "for",
+        "from",
+        "has",
+        "have",
+        "in",
+        "into",
+        "is",
+        "it",
+        "its",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "their",
+        "this",
+        "to",
+        "was",
+        "were",
+        "will",
+        "with",
+        "all",
+        "you",
+        "your",
+        "we",
+        "our",
+        "can",
+        "do",
+        "does",
+        "not",
+        "no",
+    ]
+)
 MAX_SEARCH_RESULTS = 25
 
 
 def build_search_query(text: str) -> str:
-    """Turn free text into an arXiv ``search_query``: every word must match (all fields).
+    """Turn free text into an arXiv ``search_query``: every content word must match (all fields).
 
     Only word characters, dots, and hyphens are kept, so user input cannot inject arXiv query
     operators or parameters.
     """
-    terms = _QUERY_TERM.findall(text)[:12]
+    terms = _QUERY_TERM.findall(text)
     if not terms:
         raise InvalidInputError("search text must contain at least one word")
+    terms = ([t for t in terms if t.lower() not in _STOP_WORDS] or terms)[:12]
     return " AND ".join(f"all:{term}" for term in terms)
 
 

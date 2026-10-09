@@ -3,7 +3,7 @@
 Status values: **Verified** (passing test/eval evidence) · **Implemented, unverified** · **Partial** · **Blocked** · **Planned** · **Deferred**.
 Update this file in the same change that alters a requirement's implementation or tests.
 
-Last updated: 2026-10-09 (Step 4 RAG evaluation audit; findings RA-01–RA-09 in `docs/evaluation/rag-evaluation-report.md`).
+Last updated: 2026-10-09 (MVP final acceptance; per-requirement status with live evidence in `docs/release/mvp-requirements-matrix.md`, which supersedes this table where they differ).
 
 | Req | Milestone | Module(s) | Tests / evidence | Metric | Status |
 |-----|-----------|-----------|------------------|--------|--------|

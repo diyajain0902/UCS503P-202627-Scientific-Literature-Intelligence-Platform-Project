@@ -1,16 +1,46 @@
 # UCS503P-202627-Scientific-Literature-Intelligence-Platform-Project
 
-UCS503P 202627 Scientific Literature Intelligence Platform Project — a retrieval-augmented research assistant that
-answers questions over arXiv and uploaded papers with citations to source pages. Everything runs locally
-(sentence-transformers embeddings, PostgreSQL + pgvector, Ollama for generation).
+**Scientific Literature Intelligence Platform:** a local, retrieval-augmented research assistant for scientific
+papers. UCS503P (2026–27), Thapar Institute of Engineering and Technology. Authors: Paarth Ganesh, Diya Jain. Lab
+instructor: Ms. Paramveer Kaur.
 
-**Status (2026-10-09):** milestones M0–M6 merged; M7 (release readiness) delivered on
-`feature/m7-release-readiness`, awaiting team approval. Working end to end: arXiv import and PDF upload →
-page-aware extraction → chunking → local embeddings → hybrid search (dense + BM25 + cross-encoder rerank) → grounded
-Q&A with the local Ollama model (server-checked citations, explicit "insufficient evidence"), summaries, synthesis,
-extraction, comparison, corpus management, evaluation harness with a CI gate.
-Measured (`docs/evaluation.md` §7): Recall@5 0.875 (target 0.80; assistant-written, unreviewed labels); Q&A warm p95
-4.4–4.5 s (target 3 s **not met**). Handover: `docs/handover.md`. Operations: `docs/operations.md`.
+Import papers from arXiv or upload PDFs. The assistant extracts text page by page, indexes it with local
+embeddings, and answers questions with a **local** Ollama model. Every claim cites the exact passage and page it
+came from; citations are checked on the server; and when the papers don't support an answer, it says so instead
+of guessing. No document or question leaves the machine (apart from arXiv downloads).
+
+**MVP status (2026-10-09): MVP READY WITH DOCUMENTED LIMITATIONS.** See `docs/release/mvp-acceptance-report.md`
+and `docs/release/mvp-known-limitations.md`.
+
+## Implemented functionality
+
+| Area | What works (requirement IDs in `docs/release/mvp-requirements-matrix.md`) |
+|------|--------------------------------------------------------------------------------|
+| Ingestion | arXiv search and import by ID (idempotent), PDF upload with validation, job tracking and retry (FR-01–FR-03, FR-17) |
+| Processing | Page-aware PyMuPDF extraction, 256-token chunks with page and character provenance, MiniLM 384-dim embeddings in PostgreSQL + pgvector (FR-04–FR-07) |
+| Search | Dense, BM25 and hybrid retrieval with cross-encoder reranking (FR-08, FR-24, FR-25) |
+| Grounded Q&A | Local Ollama (`qwen2.5:3b`), citation chips with a source inspector, explicit "insufficient evidence" (FR-09–FR-11) |
+| Analysis | Paper summary, cross-paper synthesis, structured extraction, comparison table (FR-12–FR-15) |
+| Corpus | Browse, filter, details, delete; question history; dashboard; settings (FR-16, FR-18, FR-22, FR-23) |
+| Evaluation | Recall@k / MRR harness, Q&A metrics, CI retrieval gate (FR-19–FR-21) |
+
+**Measured** (`docs/evaluation/rag-evaluation-report.md`): Recall@5 0.875 (target 0.80; 50 assistant-written,
+unreviewed labels), citation validity 1.00, 9/10 unanswerable questions abstained, warm Q&A p95 4.4–4.5 s (target
+3 s **not met**).
+
+## Documentation
+
+| Topic | Document |
+|-------|----------|
+| Architecture and data-flow diagrams | `docs/architecture/overview.md`, `docs/architecture/data-model.md` |
+| Step-by-step setup, tests, demo | `docs/operations/mvp-setup-and-testing.md` |
+| Operations (config, backup, troubleshooting) | `docs/operations.md` |
+| Acceptance, requirements status, limitations | `docs/release/` |
+| Evaluation method and results | `docs/evaluation.md`, `docs/evaluation/` |
+| Security | `docs/security.md`, `docs/security/` |
+| Decisions | `docs/adr/` |
+| History of the work | `docs/implementation/progress.md` |
+| Handover | `docs/handover.md` |
 
 ## Layout
 
@@ -28,7 +58,9 @@ Measured (`docs/evaluation.md` §7): Recall@5 0.875 (target 0.80; assistant-writ
 ## Prerequisites
 
 - Docker Desktop (WSL2 backend on Windows)
-- [Ollama](https://ollama.com/) with `ollama pull qwen2.5:3b` (used from Milestone 2; search works without it)
+- [Ollama](https://ollama.com/) running on the host, then `ollama pull qwen2.5:3b` (~2 GB). Q&A and analyses need
+  it; search works without it. The backend reaches it at `host.docker.internal:11434` (Docker) or
+  `127.0.0.1:11434` (local). Change the model with `SLIP_OLLAMA_MODEL`; the model is recorded with every answer.
 - For local development without containers: [uv](https://docs.astral.sh/uv/) and Node.js 24
 
 ## Run the full stack (Docker Compose)
@@ -46,6 +78,22 @@ The first start downloads the embedding model and the reranker (~90 MB each) int
 15 minutes on the reference network); `/api/v1/ready` reports `loading` for `embedding_model` / `reranker` until
 both are ready. Ports bind to 127.0.0.1 only. Full step-by-step guide and test matrix:
 `docs/operations/mvp-setup-and-testing.md`.
+
+Database migrations run automatically when the backend container starts (`alembic upgrade head`). Run them by
+hand for local development (below) or for the evaluation database.
+
+## Demonstration
+
+With `/api/v1/ready` all green:
+
+1. Import arXiv `1706.03762v7`.
+2. Search for a concept.
+3. Ask "What BLEU score does the big Transformer model achieve on the WMT 2014 English-to-German translation
+   task?" and open citation **P1**.
+4. Ask something the paper does not cover, to see *insufficient evidence*.
+5. Summarise or extract a paper, and compare two.
+
+The full script is in `docs/release/mvp-acceptance-report.md` §7.
 
 ## Local development
 
