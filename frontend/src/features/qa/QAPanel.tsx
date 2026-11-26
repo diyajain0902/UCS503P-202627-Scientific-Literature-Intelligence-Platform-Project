@@ -1,147 +1,130 @@
-import { useState, type FormEvent } from 'react'
-import { api, errorMessage, formatPages, type QAAnswer, type QAEvidence } from '../../api/client'
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { api, errorMessage, type QAAnswer } from '../../api/client'
+import { useEscape } from '../../ui/hooks'
+import { AnswerView } from './AnswerView'
+import { SourceCard } from './SourceCard'
 
-function EvidenceCard({ evidence, selected }: { evidence: QAEvidence; selected: boolean }) {
-  return (
-    <article
-      id={`evidence-${evidence.label}`}
-      className={selected ? 'evidence evidence-selected' : 'evidence'}
-      aria-current={selected ? 'true' : undefined}
-    >
-      <header className="result-header">
-        <span className="paper-title">
-          [{evidence.label}] {evidence.paper_title}
-        </span>
-        <span className="muted small">
-          {evidence.arxiv_id && `arXiv:${evidence.arxiv_id}v${evidence.arxiv_version} · `}
-          {formatPages(evidence.page_start, evidence.page_end)} · retrieval rank {evidence.rank} · score{' '}
-          {evidence.score.toFixed(3)}
-          {evidence.chunk_id === null && ' · source since deleted (snapshot shown)'}
-        </span>
-      </header>
-      <blockquote className="passage">{evidence.text}</blockquote>
-    </article>
-  )
+/** A question handed to the Ask view from elsewhere (Home, a paper drawer). `send` asks it straight away. */
+export interface AskRequest {
+  id: number
+  question: string
+  send: boolean
 }
 
-export function AnswerView({ answer }: { answer: QAAnswer }) {
-  const [selected, setSelected] = useState<string | null>(null)
-  const evidenceByLabel = new Map(answer.evidence.map((e) => [e.label, e]))
-  const selectedEvidence = selected ? evidenceByLabel.get(selected) : undefined
-
-  return (
-    <div className="answer">
-      {answer.status === 'answered' && (
-        <ol className="claims" aria-label="Answer claims">
-          {answer.claims.map((claim) => (
-            <li key={claim.index}>
-              <span>{claim.text}</span>{' '}
-              {claim.citations.map((citation) =>
-                citation.valid ? (
-                  <button
-                    key={citation.label}
-                    type="button"
-                    className="chip"
-                    aria-pressed={selected === citation.label}
-                    aria-label={`Show source ${citation.label}`}
-                    onClick={() => setSelected(citation.label)}
-                  >
-                    {citation.label}
-                  </button>
-                ) : (
-                  <span
-                    key={citation.label}
-                    className="chip chip-invalid"
-                    title="The model cited a passage it was not given; this citation is not valid."
-                  >
-                    {citation.label} (invalid)
-                  </span>
-                ),
-              )}
-              {claim.support === 'unsupported' && (
-                <span className="badge-warning"> Unsupported: no valid citation</span>
-              )}
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {answer.status === 'insufficient_evidence' && (
-        <p role="status" className="notice">
-          <strong>Insufficient evidence.</strong> {answer.reason}
-        </p>
-      )}
-
-      {selectedEvidence && (
-        <section aria-label="Citation inspector" className="inspector">
-          <h3>Source {selectedEvidence.label}</h3>
-          <EvidenceCard evidence={selectedEvidence} selected />
-        </section>
-      )}
-
-      <p className="muted small">
-        {answer.generation_model ? `${answer.generation_model} · ` : 'No model call · '}
-        prompt {answer.prompt_version} · {answer.timings.latency_ms} ms
-        {answer.status === 'answered' &&
-          ' · Citations are checked against the passages retrieved; whether each passage fully supports a claim is not verified automatically.'}
-      </p>
-
-      {answer.evidence.length > 0 && (
-        <details>
-          <summary>Retrieved passages ({answer.evidence.length})</summary>
-          {answer.evidence.map((evidence) => (
-            <EvidenceCard key={evidence.label} evidence={evidence} selected={selected === evidence.label} />
-          ))}
-        </details>
-      )}
-    </div>
-  )
+interface Turn {
+  key: number
+  question: string
+  answer: QAAnswer | null
+  error: string | null
 }
 
-export function QAPanel() {
-  const [question, setQuestion] = useState('')
-  const [answer, setAnswer] = useState<QAAnswer | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+/** Grounded Q&A as a thread (FR-09–FR-11). Each question is answered independently by the backend. */
+export function QAPanel({ toolbar, request }: { toolbar?: ReactNode; request?: AskRequest | null }) {
+  const [turns, setTurns] = useState<Turn[]>([])
+  const [draft, setDraft] = useState('')
+  const [selected, setSelected] = useState<{ turn: number; label: string } | null>(null)
+  const nextKey = useRef(0)
+  const handled = useRef<number | null>(null)
+  const input = useRef<HTMLInputElement>(null)
+  const end = useRef<HTMLDivElement>(null)
+  const loading = turns.some((t) => !t.answer && !t.error)
+  useEscape(selected !== null, () => setSelected(null))
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
-    setLoading(true)
-    setError(null)
-    setAnswer(null)
+  const ask = useCallback(async (text: string) => {
+    const question = text.trim()
+    if (!question) return
+    const key = nextKey.current++
+    setTurns((current) => [...current, { key, question, answer: null, error: null }])
     try {
-      setAnswer(await api.ask(question))
+      const answer = await api.ask(question)
+      setTurns((current) => current.map((t) => (t.key === key ? { ...t, answer } : t)))
     } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setLoading(false)
+      setTurns((current) => current.map((t) => (t.key === key ? { ...t, error: errorMessage(err) } : t)))
     }
+  }, [])
+
+  const [prefilled, setPrefilled] = useState<number | null>(null)
+  if (request && !request.send && request.id !== prefilled) {
+    setPrefilled(request.id)
+    setDraft(request.question)
   }
 
+  useEffect(() => {
+    if (!request || handled.current === request.id) return
+    handled.current = request.id
+    if (request.send) void ask(request.question)
+    else input.current?.focus()
+  }, [request, ask])
+
+  useEffect(() => {
+    end.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' })
+  }, [turns.length])
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    if (loading) return
+    const question = draft
+    setDraft('')
+    void ask(question)
+  }
+
+  const selectedTurn = selected ? turns.find((t) => t.key === selected.turn) : undefined
+  const evidence = selectedTurn?.answer?.evidence.find((e) => e.label === selected?.label)
+
   return (
-    <section aria-labelledby="qa-heading" className="card">
-      <h2 id="qa-heading">Ask the corpus</h2>
-      <form onSubmit={submit} className="stack-form">
-        <label htmlFor="qa-question">Question</label>
-        <textarea
-          id="qa-question"
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          placeholder="e.g. How many attention heads does the base Transformer use?"
-          maxLength={1000}
-          rows={3}
-          required
-        />
-        <button type="submit" disabled={loading || question.trim() === ''}>
-          {loading ? 'Answering… (local model)' : 'Ask'}
-        </button>
-      </form>
-      {error && (
-        <p role="alert" className="status-error">
-          {error}
-        </p>
-      )}
-      {answer && <AnswerView key={answer.id} answer={answer} />}
-    </section>
+    <div className="ask-layout">
+      <div className="ask-column">
+        {toolbar}
+        {turns.length === 0 && (
+          <div className="ask-empty">
+            <strong>Ask your papers.</strong>
+            Every claim cites the exact passage and page. When your papers don't cover it, slip says so instead of
+            guessing.
+          </div>
+        )}
+        <div className="thread">
+          {turns.map((turn) => (
+            <Fragment key={turn.key}>
+              <div className="bubble">{turn.question}</div>
+              {turn.answer ? (
+                <AnswerView
+                  answer={turn.answer}
+                  selected={selected?.turn === turn.key ? selected.label : null}
+                  onSelect={(label) => setSelected(label ? { turn: turn.key, label } : null)}
+                />
+              ) : turn.error ? (
+                <p role="alert" className="alert">
+                  {turn.error}
+                </p>
+              ) : (
+                <p className="pending" aria-live="polite">
+                  <span className="dot dot-pulse tone-mint" aria-hidden="true" />
+                  Answering… (local model)
+                </p>
+              )}
+            </Fragment>
+          ))}
+          <div ref={end} />
+        </div>
+        <form className="composer" onSubmit={submit}>
+          <label htmlFor="qa-question" className="sr-only">
+            Question
+          </label>
+          <input
+            id="qa-question"
+            ref={input}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={turns.length ? 'Ask another question…' : 'Ask a question about your papers…'}
+            maxLength={1000}
+            autoComplete="off"
+          />
+          <button type="submit" className="btn btn-dark" disabled={loading || draft.trim() === ''}>
+            Ask
+          </button>
+        </form>
+      </div>
+      {evidence && <SourceCard evidence={evidence} onClose={() => setSelected(null)} />}
+    </div>
   )
 }
