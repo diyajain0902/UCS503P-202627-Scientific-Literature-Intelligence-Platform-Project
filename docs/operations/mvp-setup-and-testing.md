@@ -32,18 +32,21 @@ Wait until `curl http://localhost:8080/api/v1/ready` returns `"status":"ready"`,
 reference run**, almost all of it model downloads. Don't start a demo until `reranker` is `ok`; otherwise the first
 search waits for the download.
 
-Open http://localhost:8080. Stop with `docker compose down`, which keeps the data. `docker compose down -v` deletes
+Open http://localhost:8080 for the landing page; the dashboard is at http://localhost:8080/app. Stop with `docker compose down`, which keeps the data. `docker compose down -v` deletes
 **all** data.
 
 ## 3. Demo journey (verified)
 
-1. **Add papers → Import by arXiv ID:** `1706.03762v7` reaches the job state `ready` (11 s in the reference run).
-2. **Search passages:** "why scale dot-product attention by the square root of d_k" returns page-4 passages from
+Verified on 2026-10-09 with the previous UI. The step names below follow the 2026-11-27 redesign. In the new UI, Ask and
+the citation inspector were checked with a different question; these exact steps were not re-run.
+
+1. **Library → + Add papers → arXiv tab:** paste `1706.03762v7`; the job reaches `ready` (11 s in the reference run).
+2. **Ask → Find passages:** "why scale dot-product attention by the square root of d_k" returns page-4 passages from
    *Attention Is All You Need*.
 3. **Ask:** "What BLEU score does the big Transformer model achieve on the WMT 2014 English-to-German translation
    task?" is answered with a citation chip **P1**.
-4. **Click P1:** the inspector shows the cited passage (arXiv 1706.03762v7, page 8, containing "28.4").
-5. **History:** the saved answer reopens with the same evidence.
+4. **Click P1:** the inspector panel beside the answer shows the cited passage (arXiv 1706.03762v7, page 8, containing "28.4").
+5. **History:** the saved answer reopens in a drawer with the same evidence.
 
 Expect some abstentions on answerable questions. In the reference run, 2 of 3 questions got "insufficient
 evidence": one because the answering passage was not retrieved, one because the model abstained despite having
