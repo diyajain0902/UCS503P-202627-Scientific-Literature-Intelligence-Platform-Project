@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, errorMessage, TERMINAL_STATES, type Job } from '../../api/client'
-import { STATE_LABELS } from './jobLabels'
+import { jobName, STATE_LABELS } from './jobLabels'
 
 interface Props {
   job: Job
   onFinished?: (job: Job) => void
   pollIntervalMs?: number
+  /** Hide the job name when the surrounding row already shows it. */
+  showName?: boolean
 }
 
 /** Shows a job's live state from the backend, polling until it is ready or failed. */
-export function JobStatus({ job: initial, onFinished, pollIntervalMs = 1000 }: Props) {
+export function JobStatus({ job: initial, onFinished, pollIntervalMs = 1000, showName = true }: Props) {
   const [job, setJob] = useState(initial)
   const [error, setError] = useState<string | null>(null)
   const finished = useRef(TERMINAL_STATES.has(initial.state))
@@ -48,12 +50,20 @@ export function JobStatus({ job: initial, onFinished, pollIntervalMs = 1000 }: P
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial.id, pollIntervalMs])
 
-  const label = job.display_name ?? job.source_ref
+  const failed = job.state === 'failed'
+  const running = !TERMINAL_STATES.has(job.state)
   return (
-    <p role="status" aria-live="polite" className={job.state === 'failed' ? 'status-error' : undefined}>
-      <strong>{label}</strong>: {STATE_LABELS[job.state] ?? job.state}
-      {job.state === 'failed' && job.error ? ` — ${job.error}` : ''}
-      {error && <span className="status-error"> (status check failed: {error})</span>}
+    <p role="status" aria-live="polite" className={failed ? 'job-inline is-failed' : 'job-inline'}>
+      <span
+        className={`dot ${failed ? 'dot-bad' : job.state === 'ready' ? 'dot-ok' : 'tone-lav'} ${running ? 'dot-pulse' : ''}`}
+        aria-hidden="true"
+      />
+      <span>
+        {showName && <strong>{jobName(job)}: </strong>}
+        {STATE_LABELS[job.state] ?? job.state}
+        {failed && job.error ? ` — ${job.error}` : ''}
+        {error && <span className="text-bad"> (status check failed: {error})</span>}
+      </span>
     </p>
   )
 }

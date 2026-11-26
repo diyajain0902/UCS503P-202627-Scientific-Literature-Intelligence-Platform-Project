@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type DragEvent, type FormEvent } from 'react'
 import { api, errorMessage, type Job } from '../../api/client'
 import { JobStatus } from './JobStatus'
 
@@ -8,12 +8,21 @@ interface Props {
   pollIntervalMs?: number
 }
 
+/** Upload PDF tab of "Add papers" (FR-03): drop zone or browse, optional title, size check before sending. */
 export function UploadForm({ onImported, maxMegabytes = 50, pollIntervalMs = 1000 }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [job, setJob] = useState<Job | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [dragging, setDragging] = useState(false)
+
+  function drop(event: DragEvent) {
+    event.preventDefault()
+    setDragging(false)
+    const dropped = event.dataTransfer.files[0]
+    if (dropped) setFile(dropped)
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -35,45 +44,54 @@ export function UploadForm({ onImported, maxMegabytes = 50, pollIntervalMs = 100
   }
 
   return (
-    <section aria-labelledby="upload-heading" className="card">
-      <h2 id="upload-heading">Upload a PDF</h2>
-      <p className="muted small" id="upload-help">
-        Text-based PDFs up to {maxMegabytes} MB. Scanned PDFs are rejected (no OCR).
-      </p>
-      <form onSubmit={submit} className="stack-form">
-        <label htmlFor="upload-file">PDF file</label>
+    <form onSubmit={submit} className="stack">
+      <label
+        htmlFor="upload-file"
+        className={dragging ? 'dropzone is-dragging' : 'dropzone'}
+        onDragOver={(event) => {
+          event.preventDefault()
+          setDragging(true)
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={drop}
+      >
+        <span className="dropzone-title">{file ? file.name : 'Drop a PDF here'}</span>
+        <span className="faint small" id="upload-help">
+          or <span className="link-ish">browse</span> · up to {maxMegabytes} MB · text-based PDFs only (scans are rejected, no
+          OCR)
+        </span>
         <input
           id="upload-file"
           type="file"
+          className="sr-only"
           accept="application/pdf,.pdf"
-          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+          aria-label="PDF file"
           aria-describedby="upload-help"
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
-        <label htmlFor="upload-title">Title (optional)</label>
-        <input
-          id="upload-title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          maxLength={300}
-          placeholder="Defaults to the PDF's embedded title or file name"
-        />
-        <button type="submit" disabled={submitting || !file}>
-          {submitting ? 'Uploading…' : 'Upload'}
-        </button>
-      </form>
+      </label>
+      <label htmlFor="upload-title" className="field-label">
+        Title (optional)
+      </label>
+      <input
+        id="upload-title"
+        className="text-input"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        maxLength={300}
+        placeholder="Defaults to the PDF's embedded title or file name"
+      />
+      <button type="submit" className="btn btn-dark" disabled={submitting || !file}>
+        {submitting ? 'Uploading…' : 'Upload'}
+      </button>
       {error && (
-        <p role="alert" className="status-error">
+        <p role="alert" className="alert">
           {error}
         </p>
       )}
       {job && (
-        <JobStatus
-          key={job.id}
-          job={job}
-          pollIntervalMs={pollIntervalMs}
-          onFinished={(done) => done.state === 'ready' && onImported()}
-        />
+        <JobStatus key={job.id} job={job} pollIntervalMs={pollIntervalMs} onFinished={(done) => done.state === 'ready' && onImported()} />
       )}
-    </section>
+    </form>
   )
 }
