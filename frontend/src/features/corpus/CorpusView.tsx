@@ -1,73 +1,30 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, errorMessage, type Page, type Paper, type PaperFilters } from '../../api/client'
-import { PaperAnalysis } from '../analysis/PaperAnalysis'
+import { RecentJobs } from '../ingest/RecentJobs'
+import { paperYear, shortAuthors } from '../../ui/format'
+import { toneAt } from '../../ui/tones'
+import { PaperDrawer } from './PaperDrawer'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 24
+const FILTER_DELAY_MS = 250
+const SOURCES = [
+  ['', 'All'],
+  ['arxiv', 'arXiv'],
+  ['upload', 'Uploads'],
+] as const
 
-function PaperDetails({ paper, onDeleted }: { paper: Paper; onDeleted: () => void }) {
-  const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState(false)
-
-  async function remove() {
-    setDeleting(true)
-    setError(null)
-    try {
-      await api.deletePaper(paper.id)
-      onDeleted()
-    } catch (err) {
-      setError(errorMessage(err))
-      setDeleting(false)
-    }
-  }
-
-  return (
-    <article className="details" aria-label={`Details for ${paper.title}`}>
-      <h3>{paper.title}</h3>
-      <p className="muted small">
-        {paper.source === 'arxiv' && paper.arxiv_id ? (
-          <a href={`https://arxiv.org/abs/${paper.arxiv_id}v${paper.arxiv_version}`} target="_blank" rel="noreferrer noopener">
-            arXiv:{paper.arxiv_id}v{paper.arxiv_version}
-          </a>
-        ) : (
-          'Uploaded PDF'
-        )}
-        {paper.published_at && ` · published ${paper.published_at.slice(0, 10)}`} · {paper.page_count ?? '?'} pages ·{' '}
-        {paper.chunk_count} chunks · added {new Date(paper.created_at).toLocaleDateString()}
-      </p>
-      {paper.authors.length > 0 && <p className="small">{paper.authors.join(', ')}</p>}
-      {paper.categories.length > 0 && <p className="small muted">Categories: {paper.categories.join(', ')}</p>}
-      {paper.abstract && <p className="abstract">{paper.abstract}</p>}
-      <PaperAnalysis paperId={paper.id} />
-      {!confirming ? (
-        <button type="button" className="danger" onClick={() => setConfirming(true)}>
-          Delete paper
-        </button>
-      ) : (
-        <div role="group" aria-label="Confirm deletion" className="inline-form">
-          <span className="status-error small">
-            Delete this paper, its chunks and stored PDF? Past answers keep their quoted passages.
-          </span>
-          <button type="button" className="danger" disabled={deleting} onClick={() => void remove()}>
-            {deleting ? 'Deleting…' : 'Yes, delete'}
-          </button>
-          <button type="button" className="secondary" onClick={() => setConfirming(false)}>
-            Cancel
-          </button>
-        </div>
-      )}
-      {error && (
-        <p role="alert" className="status-error">
-          {error}
-        </p>
-      )}
-    </article>
-  )
+interface Props {
+  refreshKey: number
+  onChanged?: () => void
+  onAskPaper?: (paper: Paper) => void
+  onComparePaper?: (paper: Paper) => void
 }
 
-export function CorpusView({ refreshKey }: { refreshKey: number }) {
-  const [draft, setDraft] = useState<PaperFilters>({ q: '', source: '', category: '', year: '' })
-  const [filters, setFilters] = useState<PaperFilters>({})
+/** Library (FR-16): filterable card grid of papers, the jobs strip, and the paper drawer. */
+export function CorpusView({ refreshKey, onChanged, onAskPaper, onComparePaper }: Props) {
+  const [draft, setDraft] = useState<Required<PaperFilters>>({ q: '', source: '', category: '', year: '' })
+  const [filters, setFilters] = useState<PaperFilters>(draft)
+  const applied = useRef(JSON.stringify(draft))
   const [offset, setOffset] = useState(0)
   const [page, setPage] = useState<Page<Paper> | null>(null)
   const [categories, setCategories] = useState<string[]>([])
@@ -78,6 +35,18 @@ export function CorpusView({ refreshKey }: { refreshKey: number }) {
   useEffect(() => {
     api.categories().then(setCategories).catch(() => setCategories([]))
   }, [refreshKey, version])
+
+  // Filters apply as you type, after a short pause.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = { ...draft, year: /^\d{4}$/.test(draft.year) ? draft.year : '' }
+      if (JSON.stringify(next) === applied.current) return
+      applied.current = JSON.stringify(next)
+      setOffset(0)
+      setFilters(next)
+    }, FILTER_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [draft])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -93,99 +62,115 @@ export function CorpusView({ refreshKey }: { refreshKey: number }) {
     return () => controller.abort()
   }, [filters, offset, refreshKey, version])
 
-  function apply(event: FormEvent) {
-    event.preventDefault()
-    setOffset(0)
-    setSelected(null)
-    setFilters({ ...draft })
+  const refresh = () => {
+    setVersion((v) => v + 1)
+    onChanged?.()
   }
-
   const selectedPaper = page?.items.find((p) => p.id === selected)
 
   return (
-    <section aria-labelledby="corpus-heading" className="card">
-      <h2 id="corpus-heading">
-        Corpus{page && <span className="muted"> ({page.total})</span>}
-      </h2>
-      <form onSubmit={apply} className="inline-form" aria-label="Filter papers">
-        <label htmlFor="filter-q">Title</label>
-        <input id="filter-q" value={draft.q} onChange={(e) => setDraft({ ...draft, q: e.target.value })} maxLength={200} />
-        <label htmlFor="filter-source">Source</label>
+    <div className="view library">
+      <div className="toolbar">
+        <div className="filter-box">
+          <span className="search-glyph" aria-hidden="true" />
+          <label htmlFor="filter-q" className="sr-only">
+            Filter papers
+          </label>
+          <input
+            id="filter-q"
+            placeholder="Filter papers"
+            value={draft.q}
+            onChange={(e) => setDraft({ ...draft, q: e.target.value })}
+            maxLength={200}
+          />
+        </div>
+        <div role="group" aria-label="Source" className="toolbar">
+          {SOURCES.map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              className="pill"
+              aria-pressed={draft.source === value}
+              onClick={() => setDraft({ ...draft, source: value })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label htmlFor="filter-category" className="sr-only">
+          Category
+        </label>
         <select
-          id="filter-source"
-          value={draft.source}
-          onChange={(e) => setDraft({ ...draft, source: e.target.value as PaperFilters['source'] })}
+          id="filter-category"
+          className="pill-select"
+          value={draft.category}
+          onChange={(e) => setDraft({ ...draft, category: e.target.value })}
         >
-          <option value="">Any</option>
-          <option value="arxiv">arXiv</option>
-          <option value="upload">Upload</option>
-        </select>
-        <label htmlFor="filter-category">Category</label>
-        <select id="filter-category" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-          <option value="">Any</option>
+          <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
         </select>
-        <label htmlFor="filter-year">Year</label>
+        <label htmlFor="filter-year" className="sr-only">
+          Year
+        </label>
         <input
           id="filter-year"
+          className="pill-input"
           inputMode="numeric"
-          pattern="[0-9]{4}"
+          placeholder="Year"
+          maxLength={4}
           value={draft.year}
-          onChange={(e) => setDraft({ ...draft, year: e.target.value })}
-          className="narrow"
+          onChange={(e) => setDraft({ ...draft, year: e.target.value.replace(/\D/g, '') })}
         />
-        <button type="submit">Apply</button>
-      </form>
+        {page && <span className="faint small">{page.total} papers</span>}
+      </div>
+
+      <RecentJobs refreshKey={refreshKey + version} onChanged={refresh} />
+
       {error && (
-        <p role="alert" className="status-error">
+        <p role="alert" className="alert">
           Could not load papers: {error}
         </p>
       )}
-      {page && page.items.length === 0 && <p className="muted">No papers match. Add some under “Add papers”.</p>}
+      {page && page.items.length === 0 && (
+        <p className="empty glass">No papers match. Add some with “+ Add papers”.</p>
+      )}
       {page && page.items.length > 0 && (
-        <ul className="paper-list" aria-label="Papers">
-          {page.items.map((paper) => (
+        <ul className="paper-grid" aria-label="Papers">
+          {page.items.map((paper, index) => (
             <li key={paper.id}>
               <button
                 type="button"
-                className="link-button"
+                className={`paper-card tone-${paper.source === 'upload' ? 'peach' : toneAt(offset + index)}`}
                 aria-expanded={selected === paper.id}
-                onClick={() => setSelected(selected === paper.id ? null : paper.id)}
+                aria-haspopup="dialog"
+                onClick={() => setSelected(paper.id)}
               >
-                {paper.title}
+                <span className="paper-meta">
+                  <span className="dot-sq" aria-hidden="true" />
+                  {paperYear(paper)} · {paper.source === 'upload' ? 'Upload' : 'arXiv'}
+                </span>
+                <span className="paper-title">{paper.title}</span>
+                <span className="paper-authors">{shortAuthors(paper.authors) || '—'}</span>
               </button>
-              <span className="muted small">
-                {paper.arxiv_id ? `arXiv:${paper.arxiv_id}v${paper.arxiv_version}` : 'Upload'} · {paper.page_count ?? '?'} pages ·{' '}
-                {paper.chunk_count} chunks
-              </span>
-              {selected === paper.id && selectedPaper && (
-                <PaperDetails
-                  paper={selectedPaper}
-                  onDeleted={() => {
-                    setSelected(null)
-                    setVersion((v) => v + 1)
-                  }}
-                />
-              )}
             </li>
           ))}
         </ul>
       )}
       {page && page.total > PAGE_SIZE && (
-        <nav className="inline-form" aria-label="Pagination">
-          <button type="button" className="secondary" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
+        <nav className="pager" aria-label="Pagination">
+          <button type="button" className="btn btn-light btn-sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
             Previous
           </button>
-          <span className="muted small">
+          <span>
             {offset + 1}–{Math.min(offset + PAGE_SIZE, page.total)} of {page.total}
           </span>
           <button
             type="button"
-            className="secondary"
+            className="btn btn-light btn-sm"
             disabled={offset + PAGE_SIZE >= page.total}
             onClick={() => setOffset(offset + PAGE_SIZE)}
           >
@@ -193,6 +178,20 @@ export function CorpusView({ refreshKey }: { refreshKey: number }) {
           </button>
         </nav>
       )}
-    </section>
+
+      {selectedPaper && (
+        <PaperDrawer
+          key={selectedPaper.id}
+          paper={selectedPaper}
+          onClose={() => setSelected(null)}
+          onDeleted={() => {
+            setSelected(null)
+            refresh()
+          }}
+          onAsk={onAskPaper}
+          onCompare={onComparePaper}
+        />
+      )}
+    </div>
   )
 }

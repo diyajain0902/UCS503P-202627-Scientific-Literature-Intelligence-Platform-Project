@@ -1,14 +1,31 @@
 import { useState } from 'react'
-import { formatPages, type Analysis, type AnalysisEvidence, type QACitation } from '../../api/client'
+import type { Analysis, QACitation } from '../../api/client'
+import { SourceCard } from '../qa/SourceCard'
+import { toneForLabel } from '../../ui/tones'
 import { FIELD_LABELS } from './fieldLabels'
 
-function Citations({ citations, onShow }: { citations: QACitation[]; onShow: (label: string) => void }) {
+function Citations({
+  citations,
+  selected,
+  onToggle,
+}: {
+  citations: QACitation[]
+  selected: string | null
+  onToggle: (label: string) => void
+}) {
   return (
     <>
       {citations
         .filter((c) => c.valid)
         .map((c) => (
-          <button key={c.label} type="button" className="chip" aria-label={`Show source ${c.label}`} onClick={() => onShow(c.label)}>
+          <button
+            key={c.label}
+            type="button"
+            className={`cite tone-${toneForLabel(c.label)}`}
+            aria-pressed={selected === c.label}
+            aria-label={`Show source ${c.label}`}
+            onClick={() => onToggle(c.label)}
+          >
             {c.label}
           </button>
         ))}
@@ -16,66 +33,64 @@ function Citations({ citations, onShow }: { citations: QACitation[]; onShow: (la
   )
 }
 
-function Source({ evidence }: { evidence: AnalysisEvidence }) {
-  return (
-    <section aria-label="Citation inspector" className="inspector">
-      <h3>
-        Source {evidence.label}: {evidence.paper_title}
-      </h3>
-      <p className="muted small">
-        {evidence.arxiv_id && `arXiv:${evidence.arxiv_id}v${evidence.arxiv_version} · `}
-        {formatPages(evidence.page_start, evidence.page_end)}
-      </p>
-      <blockquote className="passage">{evidence.text}</blockquote>
-    </section>
-  )
-}
-
-
 /** Renders a summary, synthesis, or extraction; every shown statement links to its source passage. */
 export function AnalysisResult({ analysis }: { analysis: Analysis }) {
   const [selected, setSelected] = useState<string | null>(null)
+  const toggle = (label: string) => setSelected((current) => (current === label ? null : label))
   const source = analysis.evidence.find((e) => e.label === selected)
 
   if (analysis.status !== 'completed') {
+    const error = analysis.status === 'error'
     return (
-      <p role="status" className={analysis.status === 'error' ? 'status-error' : 'notice'}>
-        <strong>{analysis.status === 'error' ? 'Error.' : 'Insufficient evidence.'}</strong> {analysis.reason}
-      </p>
+      <div className={error ? 'declined-card error-card' : 'declined-card'}>
+        <p role="status" className="declined-msg">
+          <span className="dot" aria-hidden="true" />
+          <span>
+            <b>{error ? 'Error.' : 'Insufficient evidence.'}</b> {analysis.reason}
+          </span>
+        </p>
+      </div>
     )
   }
 
   return (
-    <div className="answer">
+    <div className="answer-card">
       {analysis.result.claims && (
-        <ol className="claims" aria-label={`${analysis.kind} claims`}>
+        <ol className="claims-prose" aria-label={`${analysis.kind} claims`}>
           {analysis.result.claims.map((claim) => (
             <li key={claim.index}>
-              {claim.text} <Citations citations={claim.citations} onShow={setSelected} />
+              {claim.text}
+              <Citations citations={claim.citations} selected={selected} onToggle={toggle} />
             </li>
           ))}
         </ol>
       )}
       {analysis.result.fields && (
-        <table className="settings-table" aria-label="Extracted fields">
+        <table className="kv-table" aria-label="Extracted fields">
           <tbody>
             {analysis.result.fields.map((field) => (
               <tr key={field.field}>
                 <th scope="row">{FIELD_LABELS[field.field] ?? field.field}</th>
-                <td className={field.status === 'unknown' ? 'muted' : undefined}>
-                  {field.status === 'unknown' ? 'Unknown (not stated in the retrieved passages)' : field.value}{' '}
-                  <Citations citations={field.citations} onShow={setSelected} />
+                <td>
+                  {field.status === 'unknown' ? (
+                    <span className="not-stated">Unknown (not stated in the retrieved passages)</span>
+                  ) : (
+                    field.value
+                  )}
+                  <Citations citations={field.citations} selected={selected} onToggle={toggle} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {source && <Source evidence={source} />}
-      <p className="muted small">
-        {analysis.generation_model} · {analysis.prompt_version} · {Math.round(analysis.latency_ms)} ms · Sources are checked;
-        whether each passage fully supports a statement is not verified automatically.
+      {source && <SourceCard evidence={source} variant="inline" onClose={() => setSelected(null)} />}
+      <p className="meta-line">
+        <span>{analysis.generation_model}</span>
+        <span>{analysis.prompt_version}</span>
+        <span>{Math.round(analysis.latency_ms)} ms</span>
       </p>
+      <p className="faint small">Sources are checked; whether each passage fully supports a statement is not verified automatically.</p>
     </div>
   )
 }

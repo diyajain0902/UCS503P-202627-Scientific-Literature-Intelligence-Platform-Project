@@ -75,9 +75,41 @@ describe('QAPanel', () => {
     })
     render(<QAPanel />)
     await ask('Unknowable?')
-    expect(await screen.findByRole('status')).toHaveTextContent('Insufficient evidence. Not enough information.')
+    expect(await screen.findByRole('status')).toHaveTextContent('Not in your papers. Not enough information.')
     expect(screen.queryByRole('list', { name: 'Answer claims' })).not.toBeInTheDocument()
     expect(screen.getByText('Retrieved passages (1)')).toBeInTheDocument()
+  })
+
+  it('closes the inspector when the same citation chip is clicked again', async () => {
+    mockFetch({ 'POST /qa': () => json(answer()) })
+    render(<QAPanel />)
+    await ask('How many heads?')
+    const chip = await screen.findByRole('button', { name: 'Show source P1' })
+    await userEvent.click(chip)
+    expect(chip).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('link', { name: 'Open PDF at p. 4' })).toHaveAttribute(
+      'href',
+      'https://arxiv.org/pdf/2101.00001v1#page=4',
+    )
+    await userEvent.click(chip)
+    expect(screen.queryByRole('region', { name: 'Citation inspector' })).not.toBeInTheDocument()
+  })
+
+  it('flags an answer with invalid citations instead of calling it verified', async () => {
+    mockFetch({ 'POST /qa': () => json(answer()) })
+    render(<QAPanel />)
+    await ask('How many heads?')
+    expect(await screen.findByText('⚠ 1 invalid citation · 1 unsupported claim')).toBeInTheDocument()
+    expect(screen.queryByText(/All citations verified/)).not.toBeInTheDocument()
+  })
+
+  it('asks a question handed over from another view, once', async () => {
+    const fetch = mockFetch({ 'POST /qa': () => json(answer({ claims: [answer().claims[0]] })) })
+    const request = { id: 1, question: 'How many heads?', send: true }
+    const { rerender } = render(<QAPanel request={request} />)
+    expect(await screen.findByText('✓ All citations verified')).toBeInTheDocument()
+    rerender(<QAPanel request={request} />)
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('shows the backend reason when the local model is unavailable', async () => {

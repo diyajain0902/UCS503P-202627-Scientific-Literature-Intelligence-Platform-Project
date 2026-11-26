@@ -1,0 +1,353 @@
+/* Library, paper drawer, Add papers modal. */
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.filter-box {
+  flex: 0 1 320px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 11px;
+  padding: 9px 12px;
+}
+.filter-box input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+}
+.pill {
+  border: none;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pill[aria-pressed='true'] {
+  background: var(--ink);
+  color: #fff;
+}
+.pill-select,
+.pill-input {
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-3);
+  font-size: 12.5px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  outline: none;
+}
+.pill-input {
+  width: 70px;
+}
+
+/* Jobs strip */
+.jobs-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  padding: 6px 14px;
+  list-style: none;
+  margin: 0;
+}
+.job-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.job-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.job-state {
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.job-failed .job-state {
+  color: var(--rose-fg);
+}
+.job-bar {
+  width: 90px;
+  height: 4px;
+  border-radius: 9px;
+  background: rgba(28, 27, 34, 0.07);
+  overflow: hidden;
+  flex: none;
+}
+.job-bar span {
+  display: block;
+  height: 100%;
+  background: var(--t-dot);
+  transition: width 0.4s ease-out;
+}
+.job-row .btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* Paper grid */
+.paper-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.paper-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  min-height: 132px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(28, 27, 34, 0.04);
+  padding: 16px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.paper-card:hover,
+.paper-card[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.85);
+}
+.paper-card[aria-expanded='true'] {
+  border-color: rgba(28, 27, 34, 0.12);
+}
+.paper-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.paper-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.paper-authors {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--faint);
+}
+
+/* Paper drawer */
+.drawer-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.drawer-authors {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.drawer-abstract {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag {
+  font: 500 11px var(--mono);
+  color: var(--muted);
+  background: rgba(28, 27, 34, 0.05);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.action-row {
+  display: flex;
+  gap: 8px;
+}
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.drawer-foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+  font-size: 12px;
+  color: var(--faint);
+}
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--rose-soft);
+  color: var(--rose-fg);
+  font-size: 12.5px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-danger {
+  background: var(--rose-fg);
+  color: #fff;
+}
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.kv-table th,
+.kv-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 4px;
+  border-top: 1px solid var(--hairline);
+}
+.kv-table th {
+  width: 34%;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Add papers modal */
+.arxiv-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.arxiv-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 4px;
+  border-top: 1px solid var(--hairline);
+}
+.arxiv-row-text {
+  flex: 1;
+  min-width: 0;
+}
+.arxiv-row-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.arxiv-row-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.added {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 999px;
+  color: var(--muted);
+  border: 1px solid var(--hairline-strong);
+  white-space: nowrap;
+}
+.job-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.job-inline.is-failed {
+  color: var(--rose-fg);
+}
+.dropzone {
+  border-radius: 18px;
+  border: 1.5px dashed rgba(28, 27, 34, 0.16);
+  background: rgba(255, 255, 255, 0.5);
+  padding: 36px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  cursor: pointer;
+}
+.dropzone.is-dragging,
+.dropzone:focus-within {
+  border-color: var(--lav-dot);
+  background: var(--lav-soft);
+}
+.dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  word-break: break-all;
+}
+.link-ish {
+  color: var(--lav-fg);
+  font-weight: 500;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+

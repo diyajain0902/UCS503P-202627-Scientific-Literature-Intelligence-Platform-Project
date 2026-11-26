@@ -1,0 +1,164 @@
+/* Compare, History, Settings. */
+.compare {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pick-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 8px 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+.pick-x {
+  border: none;
+  background: none;
+  color: var(--faint);
+  font-size: 11px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.pick-x:hover {
+  color: var(--ink);
+}
+.add-pill {
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px dashed rgba(28, 27, 34, 0.2);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.picker-wrap {
+  position: relative;
+}
+.picker {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  width: min(420px, 80vw);
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 16px;
+  box-shadow: 0 24px 50px -20px rgba(40, 30, 80, 0.3);
+  z-index: 10;
+  animation: fadeUp 0.18s ease-out;
+}
+.checklist {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.checklist label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 6px;
+  border-radius: 9px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.checklist label:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+.compare-card {
+  border-radius: 20px;
+  box-shadow: 0 12px 32px -20px rgba(40, 30, 80, 0.2);
+  overflow-x: auto;
+}
+.compare-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.compare-table th,
+.compare-table td {
+  padding: 16px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.compare-table thead th {
+  font-weight: 500;
+  color: var(--ink);
+}
+.compare-table tbody th,
+.compare-table tbody td {
+  border-top: 1px solid var(--hairline);
+}
+.compare-table tbody th,
+.compare-table thead th:first-child {
+  width: 90px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--faint);
+}
+.not-stated {
+  font-style: italic;
+  color: var(--ghost);
+}
+.panel {
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.panel h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* History and Settings */
+.narrow {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.group-label {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--faint);
+  padding: 0 4px 8px;
+}
+.kv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.kv-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+}
+.kv-list li + li {
+  border-top: 1px solid rgba(28, 27, 34, 0.05);
+}
+.kv-key {
+  font-size: 13px;
+  color: var(--muted);
+}
+.kv-value {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
