@@ -1,0 +1,220 @@
+/* Landing page layout (hero animation lives in hero.css). */
+.landing {
+  min-height: 100vh;
+  background: var(--bg-landing);
+  overflow: hidden;
+}
+.landing-nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 22px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.landing-nav .wordmark {
+  padding: 0;
+}
+.landing-links {
+  display: flex;
+  gap: 28px;
+  font-size: 14px;
+}
+.landing-links a,
+.landing-links button {
+  color: var(--text-3);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+.landing-links a:hover,
+.landing-links button:hover {
+  color: #5b4bc4;
+}
+.landing-cta-sm {
+  font-size: 14px;
+  padding: 9px 16px;
+}
+.landing-hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 32px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.landing-badge {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font: 500 12px var(--mono);
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(28, 27, 34, 0.08);
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.landing-title {
+  margin-top: 22px;
+  font-size: clamp(44px, 6.4vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+  max-width: 900px;
+  text-wrap: balance;
+}
+.landing-title .serif {
+  letter-spacing: -0.02em;
+}
+.landing-sub {
+  margin-top: 22px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--text-3);
+  max-width: 600px;
+  text-wrap: pretty;
+}
+.landing-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+.landing-cta {
+  font-size: 15px;
+  padding: 13px 22px;
+}
+.landing-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px 24px;
+}
+.landing-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.landing-section-head h2 {
+  font-size: 40px;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  line-height: 1.05;
+  max-width: 520px;
+}
+.landing-section-head p {
+  font-size: 15px;
+  color: var(--text-3);
+  max-width: 380px;
+  line-height: 1.55;
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.step {
+  background: #fff;
+  border: 1px solid rgba(28, 27, 34, 0.07);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.step-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--t-bg);
+  color: var(--t-fg);
+  display: grid;
+  place-items: center;
+  font: 600 13px var(--mono);
+}
+.step h3 {
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.step p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.eval-band {
+  border-radius: 24px;
+  background: var(--ink);
+  color: #fff;
+  padding: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 28px;
+}
+.eval-num {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.eval-dim {
+  color: rgba(255, 255, 255, 0.4);
+}
+.eval-label {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 4px;
+}
+.eval-note {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+.eval-note a {
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  align-self: flex-start;
+  padding-bottom: 2px;
+}
+.landing-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 40px 0 40px;
+  font-size: 13px;
+  color: #8a8794;
+}
+
+@media (max-width: 760px) {
+  .landing-nav {
+    padding: 18px 20px;
+  }
+  .landing-links {
+    display: none;
+  }
+  .landing-hero,
+  .landing-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .landing-section-head h2 {
+    font-size: 30px;
+  }
+}

@@ -1,0 +1,217 @@
+/* Design tokens, base elements and shared keyframes (design handoff: "Dashboard v2"). Light theme only. */
+:root {
+  --ink: #1c1b22;
+  --text-2: #2c2a33;
+  --text-3: #55535f;
+  --muted: #6b6875;
+  --faint: #9a97a3;
+  --ghost: #b5b2bd;
+  --bg-app: #f5f4f0;
+  --bg-landing: #faf9f6;
+  --hairline: rgba(28, 27, 34, 0.06);
+  --hairline-strong: rgba(28, 27, 34, 0.1);
+
+  --lav-bg: oklch(0.93 0.045 290);
+  --lav-fg: oklch(0.42 0.13 290);
+  --lav-soft: oklch(0.97 0.02 290);
+  --lav-dot: oklch(0.75 0.1 290);
+  --mint-bg: oklch(0.94 0.045 165);
+  --mint-fg: oklch(0.4 0.1 165);
+  --mint-soft: oklch(0.975 0.02 165);
+  --mint-dot: oklch(0.78 0.09 165);
+  --peach-bg: oklch(0.95 0.045 60);
+  --peach-fg: oklch(0.45 0.11 55);
+  --peach-soft: oklch(0.98 0.02 60);
+  --peach-dot: oklch(0.82 0.09 60);
+  --sky-bg: oklch(0.94 0.04 235);
+  --sky-fg: oklch(0.42 0.1 240);
+  --sky-soft: oklch(0.975 0.015 235);
+  --sky-dot: oklch(0.78 0.08 235);
+  --rose-bg: oklch(0.94 0.035 20);
+  --rose-fg: oklch(0.5 0.15 25);
+  --rose-soft: oklch(0.98 0.015 20);
+  --rose-dot: oklch(0.75 0.11 20);
+  --ok: oklch(0.68 0.13 155);
+  --ok-text: oklch(0.5 0.12 155);
+  --warn: oklch(0.78 0.12 70);
+
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 16px 40px -24px rgba(40, 30, 80, 0.25);
+  --font: Geist, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+
+  color-scheme: light;
+  font-family: var(--font);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--lav-fg);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--lav-dot);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.serif {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+}
+.mono {
+  font-family: var(--mono);
+}
+.faint {
+  color: var(--faint);
+}
+.small {
+  font-size: 12.5px;
+}
+
+/* Tones: one pastel family per element, read through --t-* variables. */
+.tone-lav {
+  --t-bg: var(--lav-bg);
+  --t-fg: var(--lav-fg);
+  --t-soft: var(--lav-soft);
+  --t-dot: var(--lav-dot);
+}
+.tone-mint {
+  --t-bg: var(--mint-bg);
+  --t-fg: var(--mint-fg);
+  --t-soft: var(--mint-soft);
+  --t-dot: var(--mint-dot);
+}
+.tone-peach {
+  --t-bg: var(--peach-bg);
+  --t-fg: var(--peach-fg);
+  --t-soft: var(--peach-soft);
+  --t-dot: var(--peach-dot);
+}
+.tone-sky {
+  --t-bg: var(--sky-bg);
+  --t-fg: var(--sky-fg);
+  --t-soft: var(--sky-soft);
+  --t-dot: var(--sky-dot);
+}
+.tone-rose {
+  --t-bg: var(--rose-bg);
+  --t-fg: var(--rose-fg);
+  --t-soft: var(--rose-soft);
+  --t-dot: var(--rose-dot);
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
