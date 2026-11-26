@@ -2,6 +2,46 @@
 
 Newest first. Record facts only: what changed, commands run, actual results.
 
+## 2026-11-27 — Frontend redesign (branches `feature/frontend-redesign`, `fix/self-hosted-fonts-csp`)
+
+Implemented the design handoff "Dashboard v2" and landing page inside `frontend/` only. No backend, Docker, eval or
+API-client request changes. Merged into `main` with `--no-ff` (`941e25f`, `5f036cf`) and pushed.
+
+**Delivered:**
+- Landing page at `/` with the 12 s hero animation (reduced motion shows the final frame); dashboard under
+  `/app/<view>` without a router dependency (nginx and Vite already fall back to `index.html`).
+- Glass sidebar shell; Home (ask box, suggestions from the three newest papers, indexing banner, recent questions,
+  stats line); Ask with an Answer / Find passages toggle, claims as prose with citation chips and a side inspector
+  ("Open PDF at p. N" for arXiv papers); Library card grid with filters, jobs strip (running jobs by stage, failed
+  jobs not since retried, Retry), paper drawer (Ask / Summarise / Compare / Extract, two-step delete) and an Add
+  papers modal (arXiv keywords or ID; PDF drop zone); Compare with a paper picker and "Not stated" cells; History
+  grouped by day with saved answers in a drawer; Settings with an ambient-background toggle.
+- `ImportForm.tsx` folded into `ArxivSearch.tsx`; `Dashboard.tsx` replaced by `HomeView.tsx`.
+- Fonts self-hosted via `@fontsource` (Geist, Geist Mono, Instrument Serif).
+- Departures from the mock, to avoid fabricated content: no named user ("Local workspace"); job progress is the
+  pipeline stage, not a percentage (the API reports none); "All citations verified" only when no citation is
+  invalid and no claim unsupported; landing evaluation figures quoted from `docs/evaluation/rag-evaluation-report.md`
+  with its caveats (labels unreviewed, NFR-03 not met).
+
+**Defect found and fixed:** the production build inlined small font files as `data:` URLs, which the nginx CSP
+(`default-src 'self'`) blocked (19 console violations; Geist Mono fell back to a system font). The Vite dev server
+has no CSP, so this showed only in the container. Fixed with `build.assetsInlineLimit: 0`; served CSS then had 0
+`data:font` occurrences and all three fonts loaded. No automated regression test: the Vitest setup cannot inspect
+the production build.
+
+**Commands and results (frontend):** `npm run lint` clean; `npm run typecheck` clean; `npm test` **44 passed**
+(7 files; was 24 — tests updated where the DOM changed, keeping their intent, plus new tests for routing, dialogs,
+the jobs strip, Home, citation toggling and helpers); `npm run build` succeeded; same results on `main` after the
+merge with a clean `npm ci`. `npm audit --omit=dev`: 0 vulnerabilities; `npm audit`: 1 high in a dev dependency,
+present before this change.
+
+**Manual checks** (browser pane, against the running Compose backend with the real 21-paper library): landing page
+and animation, Home, a real Q&A answer with inspector, Library, paper drawer, Add papers modal with a live arXiv
+search (nothing imported), Compare picker, History. Rebuilt the `frontend` container; `/` and `/app/library` return
+200 locally and through the ngrok tunnel.
+
+**Not done:** no accessibility audit; demo journey import step not re-run in the new UI.
+
 ## 2026-10-09 — Milestone 6: Retrieval optimization (branch `feature/m6-retrieval-optimization`)
 
 Branched from up-to-date `main` (M5 PR #8 merged).
