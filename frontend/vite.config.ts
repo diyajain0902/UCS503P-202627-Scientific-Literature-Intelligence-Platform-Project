@@ -4,6 +4,10 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // Never inline assets as data: URLs: nginx's CSP (default-src 'self') blocks data: fonts.
+    assetsInlineLimit: 0,
+  },
   server: {
     proxy: { '/api': 'http://localhost:8000' },
   },
