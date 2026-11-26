@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { json, mockFetch } from '../../test/mockFetch'
 import { BackendStatus } from './BackendStatus'
@@ -22,10 +23,14 @@ describe('BackendStatus', () => {
         ),
     })
     render(<BackendStatus />)
-    const list = await screen.findByRole('list', { name: 'Backend dependencies' })
+    await userEvent.click(await screen.findByRole('button', { name: 'Not ready' }))
+    const list = screen.getByRole('list', { name: 'Backend dependencies' })
     expect(list).toHaveTextContent('Database: available — pgvector 0.8.0')
-    expect(list).toHaveTextContent('Embedding model: unavailable — loading')
+    expect(list).toHaveTextContent('Embeddings: unavailable — loading')
     expect(list).toHaveTextContent('Ollama: unavailable — unreachable')
+    expect(screen.getByRole('status')).toHaveTextContent('Backend not ready: Embeddings, Ollama')
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('list', { name: 'Backend dependencies' })).not.toBeInTheDocument()
   })
 
   it('reports an unreachable backend', async () => {

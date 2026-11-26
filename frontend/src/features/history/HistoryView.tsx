@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api, errorMessage, type HistoryItem, type QAAnswer } from '../../api/client'
-import { AnswerView } from '../qa/QAPanel'
+import { AnswerView } from '../qa/AnswerView'
+import { seconds } from '../../ui/format'
+import { CloseButton, Overlay } from '../../ui/overlay'
+import { groupByDay, timeLabel } from '../../ui/time'
+import { OUTCOME_LABELS, outcomeTone } from '../../ui/tones'
 
-const STATUS_LABELS: Record<string, string> = {
-  answered: 'Answered',
-  insufficient_evidence: 'Insufficient evidence',
-  error: 'Error',
-}
-
-export function HistoryView({ refreshKey }: { refreshKey: number }) {
+/** Question history (FR-18), grouped by day; a row opens the saved answer in a drawer. */
+export function HistoryView({ refreshKey, openId }: { refreshKey: number; openId?: string | null }) {
   const [items, setItems] = useState<HistoryItem[] | null>(null)
   const [answer, setAnswer] = useState<QAAnswer | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -20,50 +19,69 @@ export function HistoryView({ refreshKey }: { refreshKey: number }) {
       .catch((err: unknown) => setError(errorMessage(err)))
   }, [refreshKey])
 
-  async function open(id: string) {
+  const open = useCallback(async (id: string) => {
     setError(null)
     try {
       setAnswer(await api.answer(id))
     } catch (err) {
       setError(errorMessage(err))
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!openId) return
+    api
+      .answer(openId)
+      .then(setAnswer)
+      .catch((err: unknown) => setError(errorMessage(err)))
+  }, [openId])
 
   return (
-    <section aria-labelledby="history-heading" className="card">
-      <h2 id="history-heading">Question history</h2>
+    <div className="view narrow">
       {error && (
-        <p role="alert" className="status-error">
+        <p role="alert" className="alert">
           {error}
         </p>
       )}
-      {items && items.length === 0 && <p className="muted">No questions asked yet.</p>}
-      {items && items.length > 0 && (
-        <ul className="paper-list" aria-label="Past questions">
-          {items.map((item) => (
-            <li key={item.id}>
-              <button type="button" className="link-button" onClick={() => void open(item.id)}>
-                {item.question}
-              </button>
-              <span className="muted small">
-                {STATUS_LABELS[item.status] ?? item.status} · {item.claim_count} claims · {Math.round(item.latency_ms)} ms ·{' '}
-                {new Date(item.created_at).toLocaleString()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {items && items.length === 0 && <p className="empty glass">No questions asked yet.</p>}
+      {items &&
+        groupByDay(items).map((group) => (
+          <section key={group.label} aria-labelledby={`day-${group.label}`}>
+            <h2 id={`day-${group.label}`} className="group-label">
+              {group.label}
+            </h2>
+            <ul className="row-list glass">
+              {group.items.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className="row"
+                    aria-pressed={answer?.id === item.id}
+                    title={`${OUTCOME_LABELS[item.status] ?? item.status} · ${item.claim_count} claims · ${seconds(item.latency_ms)}`}
+                    onClick={() => void open(item.id)}
+                  >
+                    <span className={`dot tone-${outcomeTone(item.status)}`} aria-hidden="true" />
+                    <span className="row-text">{item.question}</span>
+                    <span className="sr-only">{OUTCOME_LABELS[item.status] ?? item.status}</span>
+                    <span className="row-when">{timeLabel(item.created_at)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       {answer && (
-        <section aria-label="Saved answer" className="details">
-          <h3>{answer.question}</h3>
-          {answer.status === 'error' && (
-            <p role="status" className="status-error">
-              Error: {answer.reason}
-            </p>
-          )}
-          <AnswerView key={answer.id} answer={answer} />
-        </section>
+        <Overlay kind="drawer" label="Saved answer" onClose={() => setAnswer(null)}>
+          <div className="panel-head">
+            <span className="faint small">{new Date(answer.created_at).toLocaleString()}</span>
+            <CloseButton onClick={() => setAnswer(null)} />
+          </div>
+          <section aria-label="Saved answer" className="thread">
+            <div className="bubble">{answer.question}</div>
+            <AnswerView key={answer.id} answer={answer} />
+          </section>
+        </Overlay>
       )}
-    </section>
+    </div>
   )
 }

@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api, errorMessage, type SettingsInfo } from '../../api/client'
 
-export function SettingsView() {
+interface Props {
+  ambient: boolean
+  onAmbientChange: (on: boolean) => void
+}
+
+/** Read-only backend configuration (FR-23), plus the one browser-side appearance preference. */
+export function SettingsView({ ambient, onAmbientChange }: Props) {
   const [settings, setSettings] = useState<SettingsInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,37 +20,53 @@ export function SettingsView() {
 
   const rows: [string, string][] = settings
     ? [
-        ['Embedding model', `${settings.embedding_model} (${settings.embedding_dimension}-dim)`],
-        ['Chunking', `${settings.chunk_window_tokens}-token window, ${settings.chunk_overlap_tokens}-token overlap`],
-        ['Generation model', settings.generation_model],
+        ['Answer model', settings.generation_model],
+        ['Embeddings', `${settings.embedding_model} · ${settings.embedding_dimension}-dim`],
+        ['Chunk size', `${settings.chunk_window_tokens} tokens · ${settings.chunk_overlap_tokens} overlap`],
+        ['Passages per answer', `${settings.qa_default_top_k} · min. relevance ${settings.qa_min_score}`],
         ['Generation options', Object.entries(settings.generation_options).map(([k, v]) => `${k}=${String(v)}`).join(', ')],
-        ['Q&A passages / relevance threshold', `${settings.qa_default_top_k} / ${settings.qa_min_score}`],
         ['Search result limit', String(settings.search_max_top_k)],
-        ['Upload limits', `${settings.max_pdf_megabytes} MB, ${settings.max_pdf_pages} pages`],
+        ['Upload limit', `${settings.max_pdf_megabytes} MB · ${settings.max_pdf_pages} pages`],
       ]
     : []
 
   return (
-    <section aria-labelledby="settings-heading" className="card">
-      <h2 id="settings-heading">Settings</h2>
-      <p className="muted small">Read-only. Change these with SLIP_* environment variables and restart the backend.</p>
+    <div className="view narrow">
       {error && (
-        <p role="alert" className="status-error">
+        <p role="alert" className="alert">
           {error}
         </p>
       )}
       {settings && (
-        <table className="settings-table">
-          <tbody>
+        <div className="stack">
+          <ul className="kv-list glass" aria-label="Backend settings">
             {rows.map(([label, value]) => (
-              <tr key={label}>
-                <th scope="row">{label}</th>
-                <td>{value}</td>
-              </tr>
+              <li key={label}>
+                <span className="kv-key">{label}</span>
+                <span className="kv-value">{value}</span>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+          <p className="faint small">Read-only — set via SLIP_* environment variables and restart the backend.</p>
+        </div>
       )}
-    </section>
+      <div className="stack">
+        <h2 className="group-label">Appearance (this browser)</h2>
+        <ul className="kv-list glass">
+          <li>
+            <label htmlFor="ambient" className="kv-key">
+              Ambient background
+            </label>
+            <input
+              id="ambient"
+              type="checkbox"
+              role="switch"
+              checked={ambient}
+              onChange={(event) => onAmbientChange(event.target.checked)}
+            />
+          </li>
+        </ul>
+      </div>
+    </div>
   )
 }
